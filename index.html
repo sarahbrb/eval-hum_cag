@@ -62,6 +62,15 @@ body{background:#E8EEF5}
 .btn-reset:hover{border-color:#94A3B8;color:var(--fg)}
 .btn-export{padding:6px 14px;background:var(--navy);color:#fff;border:none;border-radius:7px;font-family:inherit;font-size:.8125rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .15s}
 .btn-export:hover{opacity:.85}
+.btn-submit{padding:6px 16px;background:#16A34A;color:#fff;border:none;border-radius:7px;font-family:inherit;font-size:.8125rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s}
+.btn-submit:hover:not(:disabled){opacity:.85}
+.btn-submit:disabled{background:var(--fg3);cursor:not-allowed;opacity:.55}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:200}
+.overlay-card{background:#fff;border-radius:16px;padding:48px 40px;max-width:460px;width:90%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.2)}
+.overlay-icon{font-size:3rem;margin-bottom:16px}
+.overlay-title{font-size:1.375rem;font-weight:700;color:var(--fg);margin-bottom:10px}
+.overlay-sub{font-size:.9375rem;color:var(--fg2);line-height:1.6;margin-bottom:28px}
+.overlay-btn{padding:12px 28px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:.9375rem;font-weight:600;cursor:pointer}
 
 /* ── Panels ── */
 .panels{display:flex;flex:1;min-height:0;overflow:hidden}
@@ -191,9 +200,10 @@ body{background:#E8EEF5}
         <button class="ftab" onclick="setFilter('PM',this)">Physicien</button>
         <button class="ftab" onclick="setFilter('MR',this)">Radiothérapeute</button>
       </div>
-      <span class="prog-label"><strong id="prog-n">0</strong>/<span id="prog-tot">20</span> critères notés</span>
+      <span class="prog-label"><strong id="prog-n">0</strong>/<span id="prog-tot">20</span> critères · <strong id="global-done">0</strong>/60 CRs complets</span>
       <button class="btn-reset" onclick="resetCR()">Réinitialiser</button>
-      <button class="btn-export" onclick="exportCSV()">⬇ Télécharger CSV</button>
+      <button class="btn-export" onclick="exportCSV()">⬇ CSV partiel</button>
+      <button class="btn-submit" id="btn-submit" disabled onclick="submitEval()">✓ Soumettre</button>
     </div>
   </header>
   <div class="panels">
@@ -248,6 +258,16 @@ body{background:#E8EEF5}
         </div><!-- end comments-row -->
       </div><!-- end cmt-section -->
     </div>
+  </div>
+</div>
+
+<!-- Success overlay -->
+<div id="success-overlay" class="overlay" style="display:none">
+  <div class="overlay-card">
+    <div class="overlay-icon">✅</div>
+    <div class="overlay-title">Évaluation soumise !</div>
+    <div class="overlay-sub" id="overlay-msg">Votre fichier CSV a été téléchargé automatiquement.<br>Merci pour votre participation.</div>
+    <button class="overlay-btn" onclick="document.getElementById('success-overlay').style.display='none'">Fermer</button>
   </div>
 </div>
 
@@ -419,10 +439,46 @@ function renderRight(){
 
 function updateProg(){
   const d=ratings[cur]||{};
-  const total=CRITERIA.length;
-  const done=CRITERIA.filter(c=>d[c.name]!=null).length;
+  const mine=myCrit();
+  const done=mine.filter(c=>d[c.name]!=null).length;
   document.getElementById("prog-n").textContent=done;
-  document.getElementById("prog-tot").textContent=total;
+  document.getElementById("prog-tot").textContent=mine.length;
+  updateGlobalProg();
+}
+
+function countCompleteCRs(){
+  const mine=myCrit();
+  let done=0;
+  for(let i=0;i<60;i++){
+    const d=ratings[i]||{};
+    if(mine.every(c=>d[c.name]!=null)) done++;
+  }
+  return done;
+}
+
+function updateGlobalProg(){
+  const done=countCompleteCRs();
+  document.getElementById("global-done").textContent=done;
+  const btn=document.getElementById("btn-submit");
+  if(btn) btn.disabled=(done<60);
+}
+
+function submitEval(){
+  const incomplete=[];
+  const mine=myCrit();
+  for(let i=0;i<60;i++){
+    const d=ratings[i]||{};
+    const missing=mine.filter(c=>d[c.name]==null).length;
+    if(missing>0) incomplete.push(`CR-${String(i+1).padStart(2,"0")} (${missing} manquant${missing>1?"s":""})`);
+  }
+  if(incomplete.length>0){
+    alert("CRs incomplets :\n"+incomplete.slice(0,10).join("\n")+(incomplete.length>10?`\n…et ${incomplete.length-10} autres`:""));
+    return;
+  }
+  exportCSV();
+  document.getElementById("overlay-msg").innerHTML=
+    `Fichier CSV téléchargé pour <b>${evalName}</b> (${evalRole}).<br>Merci pour votre participation !`;
+  document.getElementById("success-overlay").style.display="flex";
 }
 
 function rate(cname,val){
@@ -487,17 +543,18 @@ function resetCR(){
 
 // ── Export CSV ────────────────────────────────────────────────────────────────
 function exportCSV(){
+  const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
   const hdr=["CR","IAA",...CRITERIA.map(c=>c.name),"Commentaire PM","Commentaire MR"];
-  const rows=[hdr.join(";")];
+  const rows=[hdr.map(q).join(",")];
   for(let i=0;i<60;i++){
     const d=ratings[i]||{};
     rows.push([
       `CR-${String(i+1).padStart(2,"0")}`,
       IAA.has(i)?"★":"",
       ...CRITERIA.map(c=>d[c.name]||""),
-      (d._cmt_pm||"").replace(/[;\n]/g," "),
-      (d._cmt_mr||"").replace(/[;\n]/g," "),
-    ].join(";"));
+      (d._cmt_pm||""),
+      (d._cmt_mr||""),
+    ].map(q).join(","));
   }
   const bom="\uFEFF";
   const blob=new Blob([bom+rows.join("\n")],{type:"text/csv;charset=utf-8"});

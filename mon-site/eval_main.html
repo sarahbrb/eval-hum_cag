@@ -440,7 +440,7 @@ function showErr(msg){
   el.textContent=msg; el.style.display="block";
 }
 
-function start(){
+async function start(){
   const name=document.getElementById("rname").value.trim();
   const roleBtn=document.querySelector(".rbtn.sel");
   if(!name||!roleBtn) return;
@@ -451,12 +451,31 @@ function start(){
   document.getElementById("reg-err").style.display="none";
   evalName=name; evalRole=role;
   myCRs=a.crs;
+
+  // 1. Charger l'état local (notes en cours, CRs soumis connus localement)
   const saved=loadState();
   if(saved&&saved.evalName===name&&saved.evalRole===role){
     ratings=saved.ratings||{}; submittedCRs=saved.submittedCRs||{};
   } else {
     ratings={}; submittedCRs={};
   }
+
+  // 2. Synchroniser avec le Sheet pour récupérer les CRs déjà soumis
+  //    (protection contre la perte du localStorage : cache vidé, autre appareil, etc.)
+  const btn=document.getElementById("gobtn");
+  btn.disabled=true; btn.textContent="Vérification…";
+  try{
+    const url=`${SHEETS_URL}?action=get_submitted&evaluateur=${encodeURIComponent(name)}&role=${encodeURIComponent(role)}`;
+    const data=await jsonpFetch(url);
+    if(data.success&&Array.isArray(data.submitted)){
+      data.submitted.forEach(crId=>{
+        const n=parseInt(crId.replace("CR-",""),10);
+        if(!isNaN(n)&&n>=1) submittedCRs[n-1]=true;
+      });
+      save();
+    }
+  }catch(e){/* Sheet inaccessible : on continue avec l'état local */}
+  btn.disabled=false; btn.textContent="Commencer →";
   launch();
 }
 

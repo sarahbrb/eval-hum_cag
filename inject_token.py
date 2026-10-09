@@ -5,7 +5,7 @@ if not token:
     print("Erreur : variable AIRTABLE_TOKEN manquante", file=sys.stderr)
     sys.exit(1)
 
-for filename in ["eval_main.html", "eval_pilot.html"]:
+for filename in ["eval_main.html"]:
     with open(filename, "r", encoding="utf-8") as f:
         content = f.read()
     content = content.replace("%%AT_TOKEN%%", token)

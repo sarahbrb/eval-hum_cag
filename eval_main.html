@@ -341,18 +341,23 @@ const SKEY = "cag_eval_main_v1";
 // Estelle PM    : CR-26..50  (idx 25..50) ↔  Dr Odile BRUN + Dr Gautier Glemarec
 // Veronica PM   : CR-51..62  (idx 50..62) ↔  Dr Gautier Glemarec
 // Christophe PM : CR-63..75  (idx 62..75) ↔  Dr Gautier Glemarec
-// Dr Odile BRUN       MR : CR-01..50 (idx 0..50)
-// Dr Gautier Glemarec MR : CR-26..75 (idx 25..75)
-// Overlap IAA PM      : CR-01..10  (idx 0..9) — évalués par les 4 PM
+// Overlap IAA PM      : CR-01..10  (idx 0..9)  — 10 CRs communs aux 4 PM
+// Sophie      PM      : CR-01..19  (idx 0..18) — 10 communs + 9 uniques (CR-11..19)
+// Estelle     PM      : CR-01..10  + CR-20..28 — 10 communs + 9 uniques
+// Veronica    PM      : CR-01..10  + CR-29..37 — 10 communs + 9 uniques
+// Christophe  PM      : CR-01..10  + CR-38..45 — 10 communs + 8 uniques
+// Dr Odile BRUN    MR : CR-01..28  (idx 0..27) — Sophie + Estelle
+// Dr Gautier Glemarec  MR : CR-20..45 (idx 19..44) — Estelle + Veronica + Christophe
+// Overlap MR          : CR-20..28  (idx 19..27) — 9 CRs évalués par les 2 MR
 const OVERLAP_PM = new Set(r(0,10));
 
 const ASSIGNMENTS = {
-  "Sophie":              {role:"PM", crs:r(0,25),                          pairedMR:["Dr Odile BRUN"]},
-  "Estelle":             {role:"PM", crs:[...r(25,50),...r(0,10)],         pairedMR:["Dr Odile BRUN","Dr Gautier Glemarec"]},
-  "Veronica":            {role:"PM", crs:[...r(50,62),...r(0,10)],         pairedMR:["Dr Gautier Glemarec"]},
-  "Christophe":          {role:"PM", crs:[...r(62,75),...r(0,10)],         pairedMR:["Dr Gautier Glemarec"]},
-  "Dr Odile BRUN":       {role:"MR", crs:r(0,50),  pairedPM:{0:"Sophie",25:"Estelle"}},
-  "Dr Gautier Glemarec": {role:"MR", crs:r(25,75), pairedPM:{25:"Estelle",50:"Veronica",62:"Christophe"}},
+  "Sophie":              {role:"PM", crs:r(0,19),                  pairedMR:["Dr Odile BRUN"]},
+  "Estelle":             {role:"PM", crs:[...r(0,10),...r(19,28)], pairedMR:["Dr Odile BRUN","Dr Gautier Glemarec"]},
+  "Veronica":            {role:"PM", crs:[...r(0,10),...r(28,37)], pairedMR:["Dr Gautier Glemarec"]},
+  "Christophe":          {role:"PM", crs:[...r(0,10),...r(37,45)], pairedMR:["Dr Gautier Glemarec"]},
+  "Dr Odile BRUN":       {role:"MR", crs:r(0,28),  pairedPM:{0:"Sophie",19:"Estelle"}},
+  "Dr Gautier Glemarec": {role:"MR", crs:r(19,45), pairedPM:{19:"Estelle",28:"Veronica",37:"Christophe"}},
 };
 
 function r(a,b){const arr=[];for(let i=a;i<b;i++)arr.push(i);return arr;}

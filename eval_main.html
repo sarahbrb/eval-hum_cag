@@ -314,7 +314,10 @@ html,body{height:100%;font-family:"Inter",system-ui,sans-serif;font-size:14px;ba
 
 <script>
 // ── Config ──────────────────────────────────────────────────
-const SHEETS_URL = "https://script.google.com/macros/s/AKfycbzjIhO7gSWgnyZ3AEGlZqJWhSJphkCxzEoz0pE0RKhEVkGF52EFa3X6rpEevyi_Rzdl/exec";
+const AT_TOKEN="%%AT_TOKEN%%";
+const AT_BASE="appCpDq5UMLxZidBX";
+const AT_TABLE="tbl0Qd1ZYN7OiwXj7";
+const AT_URL=`https://api.airtable.com/v0/${AT_BASE}/${AT_TABLE}`;
 const SKEY = "cag_eval_main_v1";
 
 // Evaluator assignments (0-indexed CR indices)
@@ -440,7 +443,7 @@ function showErr(msg){
   el.textContent=msg; el.style.display="block";
 }
 
-function start(){
+async function start(){
   const name=document.getElementById("rname").value.trim();
   const roleBtn=document.querySelector(".rbtn.sel");
   if(!name||!roleBtn) return;
@@ -451,12 +454,33 @@ function start(){
   document.getElementById("reg-err").style.display="none";
   evalName=name; evalRole=role;
   myCRs=a.crs;
+
+  // 1. Charger l'état local (notes en cours, CRs soumis connus localement)
   const saved=loadState();
   if(saved&&saved.evalName===name&&saved.evalRole===role){
     ratings=saved.ratings||{}; submittedCRs=saved.submittedCRs||{};
   } else {
     ratings={}; submittedCRs={};
   }
+
+  // 2. Synchroniser avec Airtable pour récupérer les CRs déjà soumis
+  const btn=document.getElementById("gobtn");
+  btn.disabled=true; btn.textContent="Vérification…";
+  try{
+    const formula=role==="PM"
+      ?`{pm_evaluateur}="${name}"`
+      :`AND({mr_evaluateur}="${name}",{statut}="Complet")`;
+    const resp=await fetch(`${AT_URL}?filterByFormula=${encodeURIComponent(formula)}&fields%5B%5D=cr_id`,{
+      headers:{"Authorization":`Bearer ${AT_TOKEN}`}
+    });
+    const data=await resp.json();
+    (data.records||[]).forEach(rec=>{
+      const crId=rec.fields?.cr_id;
+      if(crId){const n=parseInt(crId.replace("CR-",""),10);if(!isNaN(n)&&n>=1) submittedCRs[n-1]=true;}
+    });
+    save();
+  }catch(e){/* Airtable inaccessible : on continue avec l'état local */}
+  btn.disabled=false; btn.textContent="Commencer →";
   launch();
 }
 
@@ -665,6 +689,18 @@ function toggleSection(id){
   arr.classList.toggle("open",!open);
 }
 
+// ── Airtable helpers ──────────────────────────────────────────
+async function atFindRecord(crId,mrEval){
+  const formula=mrEval
+    ?`AND({cr_id}="${crId}",{mr_evaluateur}="${mrEval}")`
+    :`AND({cr_id}="${crId}",{mr_evaluateur}="")`;
+  const resp=await fetch(`${AT_URL}?filterByFormula=${encodeURIComponent(formula)}&maxRecords=1`,{
+    headers:{"Authorization":`Bearer ${AT_TOKEN}`}
+  });
+  const data=await resp.json();
+  return data.records?.[0]||null;
+}
+
 // ── PM answers (MR only) ──────────────────────────────────────
 async function loadPMAnswers(crIdx){
   const panel=document.getElementById("pm-answers-panel");
@@ -675,17 +711,15 @@ async function loadPMAnswers(crIdx){
   const cached=pmAnswersCache[crIdx];
   if(cached){renderPMAnswers(cached);return;}
   try{
-    const url=`${SHEETS_URL}?cr_id=${encodeURIComponent(crId)}&mr=${encodeURIComponent(evalName)}`;
-    const res=await fetch(url);
-    const data=await res.json();
-    if(data.success&&data.data&&data.data.pm_evaluateur){
-      pmAnswersCache[crIdx]=data.data;
-      renderPMAnswers(data.data);
-    } else {
+    const rec=await atFindRecord(crId,evalName);
+    if(rec?.fields?.pm_evaluateur){
+      pmAnswersCache[crIdx]=rec.fields;
+      renderPMAnswers(rec.fields);
+    }else{
       content.innerHTML=`<div class="pm-waiting">⏳ Le Physicien Médical n'a pas encore soumis ce CR.<br>Vous pouvez commencer votre évaluation et soumettre quand PM aura terminé.</div>`;
     }
   }catch(e){
-    content.innerHTML=`<div class="pm-waiting">⚠️ Impossible de charger les réponses PM.<br><small style="opacity:.8">Cause probable : le Apps Script n'a pas encore été mis à jour avec le nouveau code (v2 avec doGet). Vérifiez le déploiement, puis <a href="#" onclick="pmAnswersCache={};loadPMAnswers(${crIdx});return false;">réessayer</a>.</small></div>`;
+    content.innerHTML=`<div class="pm-waiting">⚠️ Impossible de charger les réponses PM. <a href="#" onclick="pmAnswersCache={};loadPMAnswers(${crIdx});return false;">Réessayer</a></div>`;
   }
 }
 
@@ -695,7 +729,7 @@ function renderPMAnswers(data){
   let html=`<div style="font-size:.75rem;color:var(--fg2);margin-bottom:8px">Évalué par <strong>${data.pm_evaluateur}</strong></div>`;
   html+=`<div class="pm-grid">`;
   for(const name of PM_CRITERIA_NAMES){
-    const val=data["pm_"+name]||"—";
+    const val=data["pm_"+name]!=null?String(data["pm_"+name]):"—";
     const crit=CRITERIA.find(c=>c.name===name);
     const note=crit&&val!=="—"?(crit.notes[val]||""):"";
     html+=`<div class="pm-crit-name">${name}</div><div class="pm-crit-val">${val}</div>`;
@@ -732,22 +766,21 @@ async function submitCR(){
     const pairedMRs=getPairedMRs(evalName,cur);
     let sent=0;
     for(const mrName of pairedMRs){
-      const payload={action:"pm_submit",cr_id:crId,pm_evaluateur:evalName,pm_timestamp:ts,mr_evaluateur:mrName,pm_commentaire:d._cmt_pm||""};
-      for(const c of CRITERIA.filter(x=>x.role==="PM")) payload[c.name]=d[c.name]||"";
-      const s=await postToSheets(payload);
+      const fields={cr_id:crId,statut:"PM_fait",pm_evaluateur:evalName,pm_timestamp:ts,mr_evaluateur:mrName,pm_commentaire:d._cmt_pm||""};
+      for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+c.name]=d[c.name]??null;
+      const s=await atSubmit(crId,mrName,fields);
       if(s) sent++;
     }
     ok=(sent===pairedMRs.length||pairedMRs.length===0);
     if(pairedMRs.length===0){
-      // fallback: send without pairing
-      const payload={action:"pm_submit",cr_id:crId,pm_evaluateur:evalName,pm_timestamp:ts,mr_evaluateur:"",pm_commentaire:d._cmt_pm||""};
-      for(const c of CRITERIA.filter(x=>x.role==="PM")) payload[c.name]=d[c.name]||"";
-      ok=await postToSheets(payload);
+      const fields={cr_id:crId,statut:"PM_fait",pm_evaluateur:evalName,pm_timestamp:ts,mr_evaluateur:"",pm_commentaire:d._cmt_pm||""};
+      for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+c.name]=d[c.name]??null;
+      ok=await atSubmit(crId,"",fields);
     }
   } else {
-    const payload={action:"mr_submit",cr_id:crId,mr_evaluateur:evalName,mr_timestamp:ts,mr_commentaire:d._cmt_mr||""};
-    for(const c of CRITERIA.filter(x=>x.role==="MR")) payload[c.name]=d[c.name]||"";
-    ok=await postToSheets(payload);
+    const fields={statut:"Complet",mr_evaluateur:evalName,mr_timestamp:ts,mr_commentaire:d._cmt_mr||""};
+    for(const c of CRITERIA.filter(x=>x.role==="MR")) fields["mr_"+c.name]=d[c.name]??null;
+    ok=await atSubmit(crId,evalName,fields);
   }
 
   const sRow=document.getElementById("sheets-status");
@@ -775,10 +808,25 @@ async function submitCR(){
   document.getElementById("overlay-dash").onclick=()=>{document.getElementById("success-overlay").style.display="none";showDashboard();};
 }
 
-async function postToSheets(payload){
+async function atSubmit(crId,mrEval,fields){
   try{
-    await fetch(SHEETS_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify(payload)});
-    return true;
+    const formula=mrEval
+      ?`AND({cr_id}="${crId}",{mr_evaluateur}="${mrEval}")`
+      :`AND({cr_id}="${crId}",{mr_evaluateur}="")`;
+    const resp=await fetch(`${AT_URL}?filterByFormula=${encodeURIComponent(formula)}&maxRecords=1`,{
+      headers:{"Authorization":`Bearer ${AT_TOKEN}`}
+    });
+    const found=await resp.json();
+    const rec=found.records?.[0];
+    const body=JSON.stringify({fields});
+    const hdrs={"Authorization":`Bearer ${AT_TOKEN}`,"Content-Type":"application/json"};
+    if(rec){
+      const r=await fetch(`${AT_URL}/${rec.id}`,{method:"PATCH",headers:hdrs,body});
+      const d=await r.json(); return !d.error;
+    }else{
+      const r=await fetch(AT_URL,{method:"POST",headers:hdrs,body});
+      const d=await r.json(); return !d.error;
+    }
   }catch(e){return false;}
 }
 

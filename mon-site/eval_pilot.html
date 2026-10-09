@@ -167,6 +167,7 @@ body{background:#E8EEF5}
 .cmt-ta{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg2);font-family:inherit;font-size:.875rem;color:var(--fg);resize:vertical;min-height:72px;transition:border-color .15s}
 .cmt-ta.pm:focus{outline:none;border-color:var(--pm-text)}
 .cmt-ta.mr:focus{outline:none;border-color:var(--mr-text)}
+.cmt-ta:disabled{opacity:.45;cursor:not-allowed;background:#F1F5F9;resize:none}
 
 /* ── Responsive ── */
 @media(max-width:720px){
@@ -601,6 +602,8 @@ function rate(cname,val){
 }
 
 function saveCmt(who){
+  if(who==="pm"&&evalRole!=="PM") return;
+  if(who==="mr"&&evalRole!=="MR") return;
   if(!ratings[cur]) ratings[cur]={};
   ratings[cur][`_cmt_${who}`]=document.getElementById(`cmt-${who}`).value;
   save();
@@ -697,6 +700,8 @@ function launch(){
     sel.appendChild(o);
   }
   sel.value=cur;
+  document.getElementById("cmt-pm").disabled=(evalRole!=="PM");
+  document.getElementById("cmt-mr").disabled=(evalRole!=="MR");
   renderLeft(); renderRight();
 }
 

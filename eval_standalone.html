@@ -365,11 +365,15 @@ function save(){
   try{localStorage.setItem(SKEY,JSON.stringify({evalName,evalRole,cur,ratings}));}catch(e){}
 }
 function myCrit(){
-  const myRole=c=>c.role===evalRole||c.role==="ALL";
-  if(filter==="all") return CRITERIA.filter(myRole);
-  if(filter==="PM") return CRITERIA.filter(c=>(c.role==="PM"||c.role==="ALL")&&myRole(c));
-  if(filter==="MR") return CRITERIA.filter(c=>(c.role==="MR"||c.role==="ALL")&&myRole(c));
-  return CRITERIA.filter(myRole);
+  // Display: show criteria based on active filter tab (all = tous les 20)
+  if(filter==="all") return CRITERIA;
+  if(filter==="PM") return CRITERIA.filter(c=>c.role==="PM"||c.role==="ALL");
+  if(filter==="MR") return CRITERIA.filter(c=>c.role==="MR"||c.role==="ALL");
+  return CRITERIA;
+}
+function myRoleCrit(){
+  // Completeness: only criteria required for this evaluator's role
+  return CRITERIA.filter(c=>c.role===evalRole||c.role==="ALL");
 }
 function countRatedCR(i){
   const d=ratings[i]||{};
@@ -449,7 +453,7 @@ function renderRight(){
 
 function updateProg(){
   const d=ratings[cur]||{};
-  const mine=myCrit();
+  const mine=myRoleCrit();
   const done=mine.filter(c=>d[c.name]!=null).length;
   document.getElementById("prog-n").textContent=done;
   document.getElementById("prog-tot").textContent=mine.length;

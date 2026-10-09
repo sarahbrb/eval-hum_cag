@@ -347,8 +347,8 @@ const SKEY = "cag_eval_main_v1";
 // Veronica    PM      : CR-01..15  + CR-46..60  — 15 communs + 15 uniques
 // Christophe  PM      : CR-01..15  + CR-61..75  — 15 communs + 15 uniques
 // Dr Odile BRUN    MR : CR-01..45  (idx 0..44)  — Sophie + Estelle
-// Dr Gautier Glemarec  MR : CR-31..75 (idx 30..74) — Estelle + Veronica + Christophe
-// Overlap MR          : CR-31..45  (idx 30..44)  — 15 CRs évalués par les 2 MR (Estelle unique)
+// Dr Gautier Glemarec  MR : CR-26..75 (idx 25..74) — Sophie(fin) + Estelle + Veronica + Christophe
+// Overlap MR          : CR-26..45  (idx 25..44)  — 20 CRs évalués par les 2 MR
 const OVERLAP_PM = new Set(r(0,15));
 
 const ASSIGNMENTS = {
@@ -357,7 +357,7 @@ const ASSIGNMENTS = {
   "Veronica":            {role:"PM", crs:[...r(0,15),...r(45,60)], pairedMR:["Dr Gautier Glemarec"]},
   "Christophe":          {role:"PM", crs:[...r(0,15),...r(60,75)], pairedMR:["Dr Gautier Glemarec"]},
   "Dr Odile BRUN":       {role:"MR", crs:r(0,45),  pairedPM:{0:"Sophie",30:"Estelle"}},
-  "Dr Gautier Glemarec": {role:"MR", crs:r(30,75), pairedPM:{30:"Estelle",45:"Veronica",60:"Christophe"}},
+  "Dr Gautier Glemarec": {role:"MR", crs:r(25,75), pairedPM:{25:"Sophie",30:"Estelle",45:"Veronica",60:"Christophe"}},
 };
 
 function r(a,b){const arr=[];for(let i=a;i<b;i++)arr.push(i);return arr;}

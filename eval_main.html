@@ -343,11 +343,14 @@ const SKEY = "cag_eval_main_v1";
 // Christophe PM : CR-63..75  (idx 62..75) ↔  Dr Gautier Glemarec
 // Dr Odile BRUN       MR : CR-01..50 (idx 0..50)
 // Dr Gautier Glemarec MR : CR-26..75 (idx 25..75)
+// Overlap IAA PM      : CR-01..10  (idx 0..9) — évalués par les 4 PM
+const OVERLAP_PM = new Set(r(0,10));
+
 const ASSIGNMENTS = {
-  "Sophie":              {role:"PM", crs:r(0,25),  pairedMR:["Dr Odile BRUN"]},
-  "Estelle":             {role:"PM", crs:r(25,50), pairedMR:["Dr Odile BRUN","Dr Gautier Glemarec"]},
-  "Veronica":            {role:"PM", crs:r(50,62), pairedMR:["Dr Gautier Glemarec"]},
-  "Christophe":          {role:"PM", crs:r(62,75), pairedMR:["Dr Gautier Glemarec"]},
+  "Sophie":              {role:"PM", crs:r(0,25),                          pairedMR:["Dr Odile BRUN"]},
+  "Estelle":             {role:"PM", crs:[...r(25,50),...r(0,10)],         pairedMR:["Dr Odile BRUN","Dr Gautier Glemarec"]},
+  "Veronica":            {role:"PM", crs:[...r(50,62),...r(0,10)],         pairedMR:["Dr Gautier Glemarec"]},
+  "Christophe":          {role:"PM", crs:[...r(62,75),...r(0,10)],         pairedMR:["Dr Gautier Glemarec"]},
   "Dr Odile BRUN":       {role:"MR", crs:r(0,50),  pairedPM:{0:"Sophie",25:"Estelle"}},
   "Dr Gautier Glemarec": {role:"MR", crs:r(25,75), pairedPM:{25:"Estelle",50:"Veronica",62:"Christophe"}},
 };
@@ -357,6 +360,8 @@ function r(a,b){const arr=[];for(let i=a;i<b;i++)arr.push(i);return arr;}
 function getPairedMRs(name, crIdx){
   const a=ASSIGNMENTS[name];
   if(!a||a.role!=="PM") return [];
+  // CRs overlap IAA : les PM non-Sophie utilisent une clé IAA unique
+  if(OVERLAP_PM.has(crIdx) && name!=="Sophie") return ["IAA-"+name];
   return (a.pairedMR||[]);
 }
 function getPairedPM(name, crIdx){
@@ -577,7 +582,8 @@ function showDashboard(){
     const nameVal=name.split(" : ")[1]||"";
     const card=document.createElement("div");
     card.className="cr-card"+(submitted?" done":st==="progress"?" pm-done":"");
-    card.innerHTML=`<div class="cr-card-id">CR-${String(idx+1).padStart(2,"0")}</div>
+    const isOverlap=evalRole==="PM"&&OVERLAP_PM.has(idx);
+    card.innerHTML=`<div class="cr-card-id">CR-${String(idx+1).padStart(2,"0")}${isOverlap?' <span title="CR commun IAA">⭐</span>':""}</div>
       <div class="cr-card-name">${nameVal}</div>
       <div class="cr-card-status">${submitted?"✅ Soumis":st==="progress"?"🟡 En cours":"⬜ Non commencé"}</div>`;
     card.addEventListener("click",()=>openCR(idx, submitted));
@@ -834,9 +840,13 @@ async function submitCR(){
     const pairedMRs=getPairedMRs(evalName,cur);
     let sent=0;
     for(const mrName of pairedMRs){
-      // Si le MR a déjà soumis → Complet, sinon PM_fait
-      const existing=await atFindRecord(crId,mrName);
-      const statut=existing?.fields?.mr_evaluateur?"Complet":"PM_fait";
+      // Records IAA (pas de vrai MR) → statut toujours PM_fait
+      const isIAA=mrName.startsWith("IAA-");
+      let statut="PM_fait";
+      if(!isIAA){
+        const existing=await atFindRecord(crId,mrName);
+        statut=existing?.fields?.mr_evaluateur?"Complet":"PM_fait";
+      }
       const fields={cr_id:crId,statut,pm_evaluateur:evalName,pm_timestamp:ts,mr_evaluateur:mrName,pm_commentaire:d._cmt_pm||""};
       for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+c.name]=toNum(d[c.name]);
       const s=await atSubmit(crId,mrName,fields);

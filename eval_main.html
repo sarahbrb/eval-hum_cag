@@ -834,7 +834,10 @@ async function submitCR(){
     const pairedMRs=getPairedMRs(evalName,cur);
     let sent=0;
     for(const mrName of pairedMRs){
-      const fields={cr_id:crId,statut:"PM_fait",pm_evaluateur:evalName,pm_timestamp:ts,mr_evaluateur:mrName,pm_commentaire:d._cmt_pm||""};
+      // Si le MR a déjà soumis → Complet, sinon PM_fait
+      const existing=await atFindRecord(crId,mrName);
+      const statut=existing?.fields?.mr_evaluateur?"Complet":"PM_fait";
+      const fields={cr_id:crId,statut,pm_evaluateur:evalName,pm_timestamp:ts,mr_evaluateur:mrName,pm_commentaire:d._cmt_pm||""};
       for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+c.name]=toNum(d[c.name]);
       const s=await atSubmit(crId,mrName,fields);
       if(s) sent++;
@@ -846,7 +849,11 @@ async function submitCR(){
       ok=await atSubmit(crId,"",fields);
     }
   } else {
-    const fields={statut:"Complet",mr_evaluateur:evalName,mr_timestamp:ts,mr_commentaire:d._cmt_mr||""};
+    // Si le PM a déjà soumis → Complet, sinon MR_fait
+    const existing=await atFindRecord(crId,evalName);
+    const statut=existing?.fields?.pm_evaluateur?"Complet":"MR_fait";
+    // cr_id obligatoire pour retrouver ce record quand le PM soumettra ensuite
+    const fields={cr_id:crId,statut,mr_evaluateur:evalName,mr_timestamp:ts,mr_commentaire:d._cmt_mr||""};
     for(const c of CRITERIA.filter(x=>x.role==="MR")) fields["mr_"+c.name]=toNum(d[c.name]);
     ok=await atSubmit(crId,evalName,fields);
   }

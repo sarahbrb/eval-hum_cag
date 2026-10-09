@@ -128,6 +128,9 @@ body{background:#E8EEF5}
 .crit.done.pm{border-color:var(--pm-border);border-left-color:var(--pm-text)}
 .crit.done.mr{border-color:var(--mr-border);border-left-color:var(--mr-text)}
 .crit.done.all{border-color:#CBD5E1;border-left-color:#64748B}
+.crit.locked{opacity:.55;background:#F8FAFC}
+.crit.locked .rb{cursor:not-allowed}
+.lock-badge{font-size:.7rem;color:var(--fg3);background:#F1F5F9;border:1px solid var(--border);border-radius:4px;padding:1px 6px;margin-left:6px}
 .crit-main{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
 .crit-left{flex:1;min-width:0}
 .crit-top{display:flex;align-items:center;gap:7px;margin-bottom:3px}
@@ -374,7 +377,7 @@ const CRITERIA = [
   {name:"Correspondance profil → CR",role:"MR",scale:"1-4/NA",
    q:"⚠ Vérifiez le profil patient ci-contre.\nLes informations du CR (stade, chirurgie, ER/PR…) correspondent-elles aux données du profil patient ?\n📝 Les informations peuvent être reformulées dans le CR — si la reformulation correspond au profil fourni, c'est acceptable.",
    notes:{"1":"Le CR contient des informations qui contredisent directement le profil patient.","2":"Plusieurs informations du CR ne correspondent pas au profil patient.","3":"Le CR correspond globalement au profil patient avec une légère divergence mineure.","4":"Le CR reflète fidèlement toutes les informations clés du profil patient.","N/A":"Profil patient non disponible pour cette évaluation."}},
-  {name:"Impression globale",role:"ALL",scale:"1-4",
+  {name:"Impression globale",role:"MR",scale:"1-4",
    q:"Quelle est votre impression globale sur ce compte rendu ?\nCe CR vous semble-t-il acceptable pour une utilisation clinique ?",
    notes:{"1":"CR inacceptable : erreurs majeures ou contenu trompeur rendant son utilisation clinique impossible.","2":"CR nécessitant des corrections importantes avant toute utilisation clinique.","3":"CR globalement acceptable avec quelques réserves mineures, utilisable avec prudence.","4":"CR parfaitement acceptable et prêt pour une utilisation clinique immédiate."}},
 ];
@@ -394,7 +397,7 @@ function myCrit(){
   return CRITERIA;
 }
 function myRoleCrit(){
-  return CRITERIA.filter(c=>c.role===evalRole||c.role==="ALL");
+  return CRITERIA.filter(c=>c.role===evalRole);
 }
 function countRatedCR(i){
   const d=ratings[i]||{};
@@ -444,17 +447,19 @@ function renderRight(){
       const val=d[c.name];
       const noteText=val!=null?(c.notes[val]||""):"";
       const noteLbl=val!=null?(SCALE_LABELS[val]||""):"";
-      html+=`<div class="crit ${c.role.toLowerCase()}${val!=null?" done":""}" id="crit-${c.name.replace(/[^a-z0-9]/gi,'_')}">
+      const isLocked=c.role!=="ALL"&&c.role!==evalRole;
+      html+=`<div class="crit ${c.role.toLowerCase()}${val!=null?" done":""}${isLocked?" locked":""}" id="crit-${c.name.replace(/[^a-z0-9]/gi,'_')}">
         <div class="crit-main">
           <div class="crit-left">
             <div class="crit-top">
               <span class="crit-name">${c.name}</span>
               <span class="role-chip ${c.role.toLowerCase()}">${c.role}</span>
+              ${isLocked?`<span class="lock-badge">🔒 réservé ${c.role}</span>`:""}
             </div>
             <div class="crit-q">${c.q}</div>
           </div>
           <div class="rrow">
-            ${vals.map(v=>`<button class="rb${val===v?" on":""}" data-v="${v}" onclick='rate(${JSON.stringify(c.name)},"${v}")'>${v}</button>`).join("")}
+            ${vals.map(v=>`<button class="rb${val===v?" on":""}" data-v="${v}" ${isLocked?'disabled':''} onclick='rate(${JSON.stringify(c.name)},"${v}")'>${v}</button>`).join("")}
           </div>
         </div>
         ${val!=null?`<div class="note-desc" data-v="${val}"><b>${val} · ${noteLbl}</b> — ${noteText}</div>`:""}
@@ -478,7 +483,7 @@ function updateProg(){
 }
 
 function countCompleteCRs(){
-  const allMine=CRITERIA.filter(c=>c.role===evalRole||c.role==="ALL");
+  const allMine=CRITERIA.filter(c=>c.role===evalRole);
   let done=0;
   for(let i=0;i<N_CRS;i++){
     const d=ratings[i]||{};
@@ -572,6 +577,8 @@ async function sendCSVByEmail(csvString){
 }
 
 function rate(cname,val){
+  const crit=CRITERIA.find(c=>c.name===cname);
+  if(crit&&crit.role!=="ALL"&&crit.role!==evalRole) return;
   if(!ratings[cur]) ratings[cur]={};
   const d=ratings[cur];
   if(d[cname]===val){delete d[cname];}

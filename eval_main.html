@@ -594,8 +594,16 @@ async function openCR(idx, readOnly=false){
 async function loadSubmittedAnswers(idx){
   const crId=`CR-${String(idx+1).padStart(2,"0")}`;
   try{
-    const mrEval=evalRole==="MR"?evalName:"";
-    const rec=await atFindRecord(crId,mrEval);
+    // PM: filter by pm_evaluateur (mr_evaluateur may be any MR name)
+    // MR: filter by mr_evaluateur
+    const formula=evalRole==="PM"
+      ?`AND({cr_id}="${crId}",{pm_evaluateur}="${evalName}")`
+      :`AND({cr_id}="${crId}",{mr_evaluateur}="${evalName}")`;
+    const resp=await fetch(`${AT_URL}?filterByFormula=${encodeURIComponent(formula)}&maxRecords=1`,{
+      headers:{"Authorization":`Bearer ${AT_TOKEN}`}
+    });
+    const data=await resp.json();
+    const rec=data.records?.[0];
     if(!rec?.fields) return;
     const f=rec.fields, d={};
     const prefix=evalRole==="PM"?"pm_":"mr_";

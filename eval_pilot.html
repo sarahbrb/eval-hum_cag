@@ -502,6 +502,8 @@ function updateGlobalProg(){
   btn.textContent=done<N_CRS?`✓ Soumettre (${done}/${N_CRS})`:"✓ Soumettre";
 }
 
+const SHEETS_URL="https://script.google.com/macros/s/AKfycbzjIhO7gSWgnyZ3AEGlZqJWhSJphkCxzEoz0pE0RKhEVkGF52EFa3X6rpEevyi_Rzdl/exec";
+
 async function submitEval(){
   const incomplete=[];
   const mine=myRoleCrit();
@@ -510,13 +512,8 @@ async function submitEval(){
     const missing=mine.filter(c=>d[c.name]==null).length;
     if(missing>0) incomplete.push(`CR-${String(i+1).padStart(2,"0")} (${missing} manquant${missing>1?"s":""})`);
   }
-  if(incomplete.length>0){
-    alert("CRs incomplets :\n"+incomplete.join("\n"));
-    return;
-  }
-  const csvString = buildCSV();
+  if(incomplete.length>0){alert("CRs incomplets :\n"+incomplete.join("\n"));return;}
 
-  // Show overlay in "pending" state
   document.getElementById("overlay-icon").textContent="⏳";
   document.getElementById("overlay-title").textContent="Envoi en cours…";
   document.getElementById("overlay-msg").textContent="Merci de patienter.";
@@ -524,31 +521,28 @@ async function submitEval(){
   document.getElementById("overlay-close").style.display="none";
   document.getElementById("success-overlay").style.display="flex";
 
-  // 1. Local CSV download
-  downloadCSV(csvString);
+  downloadCSV(buildCSV());
   addStatus("ok","📥","CSV téléchargé sur votre machine");
 
-  // 2. Send email via FormSubmit
-  addStatus("pending","<span class='spin'>⏳</span>","Envoi par email…","email-status");
-  const sent = await sendCSVByEmail(csvString);
-  const emailRow=document.getElementById("email-status");
-  if(emailRow){
+  addStatus("pending","<span class='spin'>⏳</span>","Envoi vers la base de données…","sheets-status");
+  const sent=await sendToSheets();
+  const row=document.getElementById("sheets-status");
+  if(row){
     if(sent){
-      emailRow.className="status-row ok";
-      emailRow.innerHTML="<span class='icon'>✉️</span>Email envoyé à sarah.bouaraba@univ-grenoble-alpes.fr";
+      row.className="status-row ok";
+      row.innerHTML="<span class='icon'>📊</span>Réponses enregistrées dans la base de données.";
     } else {
-      emailRow.className="status-row err";
-      emailRow.innerHTML="<span class='icon'>⚠️</span>Email non envoyé — le CSV est bien téléchargé sur votre machine.";
+      row.className="status-row err";
+      row.innerHTML="<span class='icon'>⚠️</span>Envoi échoué — le CSV est téléchargé sur votre machine, transmettez-le à sarah.bouaraba@univ-grenoble-alpes.fr";
     }
   }
-
   document.getElementById("overlay-icon").textContent="✅";
   document.getElementById("overlay-title").textContent="Évaluation soumise !";
   document.getElementById("overlay-msg").innerHTML=`Merci <b>${evalName}</b> (${evalRole}) pour votre participation.`;
   document.getElementById("overlay-close").style.display="inline-block";
 }
 
-function addStatus(cls, icon, text, id=""){
+function addStatus(cls,icon,text,id=""){
   const div=document.createElement("div");
   div.className=`status-row ${cls}`;
   if(id) div.id=id;
@@ -556,24 +550,21 @@ function addStatus(cls, icon, text, id=""){
   document.getElementById("overlay-statuses").appendChild(div);
 }
 
-async function sendCSVByEmail(csvString){
-  try{
-    const filename=`eval_pilote_${evalName.replace(/\s+/g,"_")}_${evalRole}.csv`;
-    const res=await fetch("https://formsubmit.co/ajax/sarah.bouaraba@univ-grenoble-alpes.fr",{
-      method:"POST",
-      headers:{"Content-Type":"application/json","Accept":"application/json"},
-      body:JSON.stringify({
-        _subject:`[CAG Pilote] ${evalName} — ${evalRole}`,
-        _captcha:"false",
-        Annotateur: evalName,
-        Rôle: evalRole,
-        Fichier: filename,
-        CSV: csvString
-      })
-    });
-    const data=await res.json();
-    return data.success==="true"||data.success===true;
-  }catch(e){return false;}
+async function sendToSheets(){
+  const ts=new Date().toISOString();
+  let ok=0;
+  for(let i=0;i<N_CRS;i++){
+    const d=ratings[i]||{};
+    const row={timestamp:ts,version:"pilote_v1",evaluateur:evalName,role:evalRole,cr_id:`CR-${String(i+1).padStart(2,"0")}`};
+    for(const c of CRITERIA) row[c.name]=d[c.name]!=null?d[c.name]:"";
+    row["commentaire_PM"]=d._cmt_pm||"";
+    row["commentaire_MR"]=d._cmt_mr||"";
+    try{
+      await fetch(SHEETS_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify(row)});
+      ok++;
+    }catch(e){}
+  }
+  return ok===N_CRS;
 }
 
 function rate(cname,val){

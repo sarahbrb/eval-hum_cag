@@ -348,7 +348,7 @@ const CRITERIA = [
    q:"Le CR est-il bien rédigé, concis et adapté au style d'un compte rendu médical ?\nÉvite-t-il les répétitions inutiles ? Le texte est-il naturel et fluide ?",
    notes:{"1":"Texte illisible ou clairement non médical, verbeux, avec de nombreuses répétitions.","2":"Texte compréhensible mais avec des maladresses stylistiques et des répétitions notables.","3":"Texte globalement bien rédigé avec quelques légères imperfections de style ou redondances mineures.","4":"Texte naturel, fluide, concis et parfaitement adapté au style d'un CR médical professionnel."}},
   {name:"Correspondance profil → CR",role:"MR",scale:"1-4/NA",
-   q:"⚠ Vérifiez le profil patient ci-contre.\nLes informations du CR (stade, chirurgie, ER/PR…) correspondent-elles aux données du profil patient ?",
+   q:"⚠ Vérifiez le profil patient ci-contre.\nLes informations du CR (stade, chirurgie, ER/PR…) correspondent-elles aux données du profil patient ?\n📝 Les informations peuvent être reformulées dans le CR — si la reformulation correspond au profil fourni, c'est acceptable.",
    notes:{"1":"Le CR contient des informations qui contredisent directement le profil patient.","2":"Plusieurs informations du CR ne correspondent pas au profil patient.","3":"Le CR correspond globalement au profil patient avec une légère divergence mineure.","4":"Le CR reflète fidèlement toutes les informations clés du profil patient.","N/A":"Profil patient non disponible pour cette évaluation."}},
   {name:"Impression globale",role:"ALL",scale:"1-4",
    q:"Quelle est votre impression globale sur ce compte rendu ?\nCe CR vous semble-t-il acceptable pour une utilisation clinique ?",

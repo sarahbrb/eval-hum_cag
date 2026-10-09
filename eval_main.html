@@ -299,11 +299,11 @@ html,body{height:100%;font-family:"Inter",system-ui,sans-serif;font-size:14px;ba
         <div class="cmt-section">
           <div class="cmt-section-hdr">Commentaires généraux sur le CR</div>
           <div class="comments-row">
-            <div>
+            <div id="cmt-pm-box">
               <div class="cmt-label"><span class="dot pm"></span>Commentaires PM</div>
               <textarea class="cmt-ta pm" id="cmt-pm" rows="3" placeholder="Observations libres (PM)…" oninput="saveCmt('pm')"></textarea>
             </div>
-            <div>
+            <div id="cmt-mr-box">
               <div class="cmt-label"><span class="dot mr"></span>Commentaires MR</div>
               <textarea class="cmt-ta mr" id="cmt-mr" rows="3" placeholder="Observations libres (MR)…" oninput="saveCmt('mr')"></textarea>
             </div>
@@ -518,6 +518,8 @@ function launch(){
   chip.className="hdr-role-chip "+(evalRole==="PM"?"pm":"mr");
   document.getElementById("cmt-pm").disabled=(evalRole!=="PM");
   document.getElementById("cmt-mr").disabled=(evalRole!=="MR");
+  document.getElementById("cmt-pm-box").style.display=evalRole==="PM"?"block":"none";
+  document.getElementById("cmt-mr-box").style.display=evalRole==="MR"?"block":"none";
   // Évaluation en parallèle : chaque profil voit uniquement ses propres critères
   filter=evalRole;
   document.getElementById("ftab-all").style.display="none";

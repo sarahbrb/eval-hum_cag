@@ -693,6 +693,7 @@ function launch(){
   document.getElementById("reg").style.display="none";
   document.getElementById("app").style.display="flex";
   const sel=document.getElementById("cr-sel");
+  sel.innerHTML="";
   for(let i=0;i<N_CRS;i++){
     const o=document.createElement("option");
     o.value=i;

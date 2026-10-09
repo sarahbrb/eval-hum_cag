@@ -578,13 +578,9 @@ async function openCR(idx){
   document.getElementById("eval-cr-id").textContent=num;
   document.getElementById("cr-title").textContent=num;
   document.getElementById("cr-title-prof").textContent=num;
-  // Always reset PM panel — show only for MR
-  const pmPanel=document.getElementById("pm-answers-panel");
-  pmPanel.style.display="none";
-  document.getElementById("pm-answers-content").innerHTML=`<span class="pm-loading">Chargement…</span>`;
+  document.getElementById("pm-answers-panel").style.display="none";
   renderLeft();
   renderRight();
-  if(evalRole==="MR") await loadPMAnswers(idx);
 }
 
 function renderLeft(){

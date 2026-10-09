@@ -666,6 +666,36 @@ function toggleSection(id){
 }
 
 // ── PM answers (MR only) ──────────────────────────────────────
+// JSONP contourne les restrictions CORS de Google Apps Script sur les requêtes GET
+function jsonpFetch(url){
+  return new Promise((resolve,reject)=>{
+    const cb="_cagcb"+Date.now()+"_"+Math.random().toString(36).slice(2);
+    let done=false;
+    const timer=setTimeout(()=>{
+      if(done)return; done=true;
+      delete window[cb];
+      if(s.parentNode) s.parentNode.removeChild(s);
+      reject(new Error("JSONP timeout"));
+    },10000);
+    window[cb]=function(data){
+      if(done)return; done=true;
+      clearTimeout(timer);
+      delete window[cb];
+      if(s.parentNode) s.parentNode.removeChild(s);
+      resolve(data);
+    };
+    const s=document.createElement("script");
+    s.onerror=()=>{
+      if(done)return; done=true;
+      clearTimeout(timer);
+      delete window[cb];
+      reject(new Error("JSONP error"));
+    };
+    s.src=url+(url.includes("?")?"&":"?")+"callback="+cb;
+    document.head.appendChild(s);
+  });
+}
+
 async function loadPMAnswers(crIdx){
   const panel=document.getElementById("pm-answers-panel");
   const content=document.getElementById("pm-answers-content");
@@ -676,8 +706,7 @@ async function loadPMAnswers(crIdx){
   if(cached){renderPMAnswers(cached);return;}
   try{
     const url=`${SHEETS_URL}?cr_id=${encodeURIComponent(crId)}&mr=${encodeURIComponent(evalName)}`;
-    const res=await fetch(url);
-    const data=await res.json();
+    const data=await jsonpFetch(url);
     if(data.success&&data.data&&data.data.pm_evaluateur){
       pmAnswersCache[crIdx]=data.data;
       renderPMAnswers(data.data);
@@ -685,7 +714,7 @@ async function loadPMAnswers(crIdx){
       content.innerHTML=`<div class="pm-waiting">⏳ Le Physicien Médical n'a pas encore soumis ce CR.<br>Vous pouvez commencer votre évaluation et soumettre quand PM aura terminé.</div>`;
     }
   }catch(e){
-    content.innerHTML=`<div class="pm-waiting">⚠️ Impossible de charger les réponses PM.<br><small style="opacity:.8">Cause probable : le Apps Script n'a pas encore été mis à jour avec le nouveau code (v2 avec doGet). Vérifiez le déploiement, puis <a href="#" onclick="pmAnswersCache={};loadPMAnswers(${crIdx});return false;">réessayer</a>.</small></div>`;
+    content.innerHTML=`<div class="pm-waiting">⚠️ Impossible de charger les réponses PM.<br><small style="opacity:.8">Vérifiez que le nouveau script Apps Script (v2 avec doGet + support JSONP) a bien été déployé comme nouvelle version, puis <a href="#" onclick="pmAnswersCache={};loadPMAnswers(${crIdx});return false;">réessayer</a>.</small></div>`;
   }
 }
 
@@ -695,7 +724,9 @@ function renderPMAnswers(data){
   let html=`<div style="font-size:.75rem;color:var(--fg2);margin-bottom:8px">Évalué par <strong>${data.pm_evaluateur}</strong></div>`;
   html+=`<div class="pm-grid">`;
   for(const name of PM_CRITERIA_NAMES){
-    const val=data["pm_"+name]||"—";
+    // Compatible schéma v1 (colonne sans préfixe) et v2 (avec préfixe pm_)
+    const v2=data["pm_"+name]; const v1=data[name];
+    const val=(v2!=null&&v2!=="")?v2:(v1!=null&&v1!==""?v1:"—");
     const crit=CRITERIA.find(c=>c.name===name);
     const note=crit&&val!=="—"?(crit.notes[val]||""):"";
     html+=`<div class="pm-crit-name">${name}</div><div class="pm-crit-val">${val}</div>`;

@@ -767,19 +767,19 @@ async function submitCR(){
     let sent=0;
     for(const mrName of pairedMRs){
       const fields={cr_id:crId,statut:"PM_fait",pm_evaluateur:evalName,pm_timestamp:ts,mr_evaluateur:mrName,pm_commentaire:d._cmt_pm||""};
-      for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+c.name]=d[c.name]??null;
+      for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+c.name]=toNum(d[c.name]);
       const s=await atSubmit(crId,mrName,fields);
       if(s) sent++;
     }
     ok=(sent===pairedMRs.length||pairedMRs.length===0);
     if(pairedMRs.length===0){
       const fields={cr_id:crId,statut:"PM_fait",pm_evaluateur:evalName,pm_timestamp:ts,mr_evaluateur:"",pm_commentaire:d._cmt_pm||""};
-      for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+c.name]=d[c.name]??null;
+      for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+c.name]=toNum(d[c.name]);
       ok=await atSubmit(crId,"",fields);
     }
   } else {
     const fields={statut:"Complet",mr_evaluateur:evalName,mr_timestamp:ts,mr_commentaire:d._cmt_mr||""};
-    for(const c of CRITERIA.filter(x=>x.role==="MR")) fields["mr_"+c.name]=d[c.name]??null;
+    for(const c of CRITERIA.filter(x=>x.role==="MR")) fields["mr_"+c.name]=toNum(d[c.name]);
     ok=await atSubmit(crId,evalName,fields);
   }
 
@@ -808,6 +808,11 @@ async function submitCR(){
   document.getElementById("overlay-dash").onclick=()=>{document.getElementById("success-overlay").style.display="none";showDashboard();};
 }
 
+function toNum(v){
+  if(v==null||v===""||v==="NA"||v==="N/A") return null;
+  const n=Number(v); return isNaN(n)?null:n;
+}
+
 async function atSubmit(crId,mrEval,fields){
   try{
     const formula=mrEval
@@ -818,16 +823,16 @@ async function atSubmit(crId,mrEval,fields){
     });
     const found=await resp.json();
     const rec=found.records?.[0];
-    const body=JSON.stringify({fields});
+    const body=JSON.stringify({fields,typecast:true});
     const hdrs={"Authorization":`Bearer ${AT_TOKEN}`,"Content-Type":"application/json"};
     if(rec){
       const r=await fetch(`${AT_URL}/${rec.id}`,{method:"PATCH",headers:hdrs,body});
-      const d=await r.json(); return !d.error;
+      const d=await r.json(); if(d.error) console.error("AT PATCH error:",d.error); return !d.error;
     }else{
       const r=await fetch(AT_URL,{method:"POST",headers:hdrs,body});
-      const d=await r.json(); return !d.error;
+      const d=await r.json(); if(d.error) console.error("AT POST error:",d.error); return !d.error;
     }
-  }catch(e){return false;}
+  }catch(e){console.error("atSubmit exception:",e);return false;}
 }
 
 function addStatus(cls,icon,text,id=""){

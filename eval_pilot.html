@@ -67,6 +67,8 @@ body{background:#E8EEF5}
 .btn-submit{padding:6px 16px;background:#16A34A;color:#fff;border:none;border-radius:7px;font-family:inherit;font-size:.8125rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s}
 .btn-submit:hover:not(:disabled){opacity:.85}
 .btn-submit:disabled{background:var(--fg3);cursor:not-allowed;opacity:.55}
+.btn-logout{padding:6px 11px;border:1.5px solid var(--border);border-radius:7px;background:#fff;font-family:inherit;font-size:.9375rem;color:var(--fg2);cursor:pointer;transition:all .12s;white-space:nowrap}
+.btn-logout:hover{border-color:#94A3B8;color:var(--fg)}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:200}
 .overlay-card{background:#fff;border-radius:16px;padding:48px 40px;max-width:500px;width:90%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.2)}
 .overlay-icon{font-size:3rem;margin-bottom:16px}
@@ -227,6 +229,7 @@ body{background:#E8EEF5}
       <button class="btn-reset" onclick="resetCR()">Réinitialiser</button>
       <button class="btn-export" onclick="exportCSV()">⬇ CSV partiel</button>
       <button class="btn-submit" id="btn-submit" disabled onclick="submitEval()">✓ Soumettre</button>
+      <button class="btn-logout" id="btn-logout" title="Changer d'évaluateur">⇐</button>
     </div>
   </header>
   <div class="panels">
@@ -663,6 +666,17 @@ function checkGo(){
   const r=document.querySelector(".rbtn.sel");
   document.getElementById("gobtn").disabled=!n||!r;
 }
+function logout(){
+  if(!confirm("Revenir à l'écran d'identification ? La progression sera effacée.")) return;
+  try{localStorage.removeItem(SKEY);}catch(e){}
+  evalName=""; evalRole=""; cur=0; ratings={};
+  document.getElementById("app").style.display="none";
+  document.getElementById("reg").style.display="";
+  document.getElementById("rname").value="";
+  document.querySelectorAll(".rbtn").forEach(b=>b.classList.remove("sel"));
+  checkGo();
+}
+document.getElementById("btn-logout").addEventListener("click",logout);
 document.getElementById("rname").addEventListener("input",checkGo);
 document.getElementById("rbtn-pm").addEventListener("click",function(){selRole(this);});
 document.getElementById("rbtn-mr").addEventListener("click",function(){selRole(this);});

@@ -350,6 +350,7 @@ const SKEY = "cag_eval_main_v1";
 // Dr Gautier Glemarec  MR : CR-26..75 (idx 25..74) — 50 CRs
 // Overlap MR          : CR-26..50  (idx 25..49)  — 25 CRs communs aux 2 MR
 const OVERLAP_PM = new Set(r(30,45));
+const OVERLAP_MR = new Set(r(25,50));
 
 const ASSIGNMENTS = {
   "Sophie":              {role:"PM", crs:[...r(0,15),...r(30,45)],  pairedMR:["Dr Odile BRUN"]},
@@ -587,7 +588,7 @@ function showDashboard(){
     const nameVal=name.split(" : ")[1]||"";
     const card=document.createElement("div");
     card.className="cr-card"+(submitted?" done":st==="progress"?" pm-done":"");
-    const isOverlap=evalRole==="PM"&&OVERLAP_PM.has(idx);
+    const isOverlap=(evalRole==="PM"&&OVERLAP_PM.has(idx))||(evalRole==="MR"&&OVERLAP_MR.has(idx));
     card.innerHTML=`<div class="cr-card-id">CR-${String(idx+1).padStart(2,"0")}${isOverlap?' <span title="CR commun IAA">⭐</span>':""}</div>
       <div class="cr-card-name">${nameVal}</div>
       <div class="cr-card-status">${submitted?"✅ Soumis":st==="progress"?"🟡 En cours":"⬜ Non commencé"}</div>`;

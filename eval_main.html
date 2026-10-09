@@ -532,6 +532,10 @@ async function openCR(idx){
   document.getElementById("eval-cr-id").textContent=num;
   document.getElementById("cr-title").textContent=num;
   document.getElementById("cr-title-prof").textContent=num;
+  // Always reset PM panel — show only for MR
+  const pmPanel=document.getElementById("pm-answers-panel");
+  pmPanel.style.display="none";
+  document.getElementById("pm-answers-content").innerHTML=`<span class="pm-loading">Chargement…</span>`;
   renderLeft();
   renderRight();
   if(evalRole==="MR") await loadPMAnswers(idx);
@@ -681,7 +685,7 @@ async function loadPMAnswers(crIdx){
       content.innerHTML=`<div class="pm-waiting">⏳ Le Physicien Médical n'a pas encore soumis ce CR.<br>Vous pouvez commencer votre évaluation et soumettre quand PM aura terminé.</div>`;
     }
   }catch(e){
-    content.innerHTML=`<div class="pm-waiting">⚠️ Impossible de charger les réponses PM (vérifiez votre connexion).</div>`;
+    content.innerHTML=`<div class="pm-waiting">⚠️ Impossible de charger les réponses PM.<br><small style="opacity:.8">Cause probable : le Apps Script n'a pas encore été mis à jour avec le nouveau code (v2 avec doGet). Vérifiez le déploiement, puis <a href="#" onclick="pmAnswersCache={};loadPMAnswers(${crIdx});return false;">réessayer</a>.</small></div>`;
   }
 }
 

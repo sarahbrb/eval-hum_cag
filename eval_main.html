@@ -242,6 +242,9 @@ html,body{height:100%;font-family:"Inter",system-ui,sans-serif;font-size:14px;ba
       <span class="prog-label"><strong id="prog-n">0</strong>/<span id="prog-tot">0</span> critères</span>
       <button class="btn-submit-cr" id="btn-submit-cr" disabled>✓ Soumettre ce CR</button>
     </div>
+    <div id="ro-banner" style="display:none;background:#EFF6FF;border-bottom:1px solid #BFDBFE;padding:8px 20px;font-size:.8125rem;color:#1E40AF;font-weight:600;text-align:center">
+      ✅ CR déjà soumis — consultation en lecture seule, aucune modification possible
+    </div>
     <div class="panels">
       <div class="pl">
         <div class="pl-sticky">
@@ -417,7 +420,7 @@ const SCALE_LABELS = {"1":"Pas du tout","2":"Partiellement","3":"Globalement","4
 // ── State ─────────────────────────────────────────────────────
 const SKEY_MAIN = "cag_eval_main_v1";
 let evalName="", evalRole="", cur=0, ratings={}, filter="all", submittedCRs={};
-let myCRs=[], pmAnswersCache={};
+let myCRs=[], pmAnswersCache={}, readOnlyMode=false;
 
 // ── Persistence ───────────────────────────────────────────────
 function save(){
@@ -565,22 +568,45 @@ function showDashboard(){
     card.innerHTML=`<div class="cr-card-id">CR-${String(idx+1).padStart(2,"0")}</div>
       <div class="cr-card-name">${nameVal}</div>
       <div class="cr-card-status">${submitted?"✅ Soumis":st==="progress"?"🟡 En cours":"⬜ Non commencé"}</div>`;
-    if(!submitted) card.addEventListener("click",()=>openCR(idx));
+    card.addEventListener("click",()=>openCR(idx, submitted));
     grid.appendChild(card);
   }
 }
 
 // ── Eval view ─────────────────────────────────────────────────
-async function openCR(idx){
-  cur=idx;
+async function openCR(idx, readOnly=false){
+  cur=idx; readOnlyMode=readOnly;
   showView("eval");
   const num=`CR-${String(idx+1).padStart(2,"0")}`;
   document.getElementById("eval-cr-id").textContent=num;
   document.getElementById("cr-title").textContent=num;
   document.getElementById("cr-title-prof").textContent=num;
   document.getElementById("pm-answers-panel").style.display="none";
+  document.getElementById("ro-banner").style.display=readOnly?"block":"none";
+  document.getElementById("btn-submit-cr").style.display=readOnly?"none":"";
+  if(readOnly && !ratings[idx]){
+    await loadSubmittedAnswers(idx);
+  }
   renderLeft();
   renderRight();
+}
+
+async function loadSubmittedAnswers(idx){
+  const crId=`CR-${String(idx+1).padStart(2,"0")}`;
+  try{
+    const mrEval=evalRole==="MR"?evalName:"";
+    const rec=await atFindRecord(crId,mrEval);
+    if(!rec?.fields) return;
+    const f=rec.fields, d={};
+    const prefix=evalRole==="PM"?"pm_":"mr_";
+    for(const c of CRITERIA.filter(x=>x.role===evalRole)){
+      const v=f[prefix+c.name];
+      if(v!=null) d[c.name]=String(v);
+    }
+    if(evalRole==="PM"&&f.pm_commentaire) d._cmt_pm=f.pm_commentaire;
+    if(evalRole==="MR"&&f.mr_commentaire) d._cmt_mr=f.mr_commentaire;
+    ratings[idx]=d;
+  }catch(e){}
 }
 
 function renderLeft(){
@@ -626,7 +652,7 @@ function renderRight(){
             <div class="crit-q">${c.q}</div>
           </div>
           <div class="rrow">
-            ${vals.map(v=>`<button class="rb${val===v?" on":""}" data-v="${v}" ${isLocked?"disabled":""} onclick='rate(${JSON.stringify(c.name)},"${v}")'>${v}</button>`).join("")}
+            ${vals.map(v=>`<button class="rb${val===v?" on":""}" data-v="${v}" ${isLocked||readOnlyMode?"disabled":""} onclick='rate(${JSON.stringify(c.name)},"${v}")'>${v}</button>`).join("")}
           </div>
         </div>
         ${val!=null?`<div class="note-desc" data-v="${val}"><b>${val} · ${noteLbl}</b> — ${noteText}</div>`:""}
@@ -638,6 +664,8 @@ function renderRight(){
   const d2=ratings[cur]||{};
   document.getElementById("cmt-pm").value=(d2._cmt_pm||"");
   document.getElementById("cmt-mr").value=(d2._cmt_mr||"");
+  document.getElementById("cmt-pm").disabled=readOnlyMode||(evalRole!=="PM");
+  document.getElementById("cmt-mr").disabled=readOnlyMode||(evalRole!=="MR");
   updateProg();
 }
 
@@ -674,6 +702,7 @@ function rate(cname,val){
 }
 
 function saveCmt(who){
+  if(readOnlyMode) return;
   if(who==="pm"&&evalRole!=="PM") return;
   if(who==="mr"&&evalRole!=="MR") return;
   if(!ratings[cur]) ratings[cur]={};
@@ -687,6 +716,7 @@ function updateProg(){
   const done=mine.filter(c=>d[c.name]!=null).length;
   document.getElementById("prog-n").textContent=done;
   document.getElementById("prog-tot").textContent=mine.length;
+  if(readOnlyMode) return;
   const btn=document.getElementById("btn-submit-cr");
   btn.disabled=(done<mine.length);
   btn.title=done<mine.length?`Complétez les ${mine.length-done} critère(s) restant(s)`:"Prêt à soumettre";

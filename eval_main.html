@@ -346,9 +346,9 @@ const SKEY = "cag_eval_main_v1";
 // Estelle     PM      : CR-01..15  + CR-31..45  — 15 communs + 15 uniques
 // Veronica    PM      : CR-01..15  + CR-46..60  — 15 communs + 15 uniques
 // Christophe  PM      : CR-01..15  + CR-61..75  — 15 communs + 15 uniques
-// Dr Odile BRUN    MR : CR-01..47  (idx 0..46)  — 47 CRs
-// Dr Gautier Glemarec  MR : CR-28..75 (idx 27..74) — 48 CRs
-// Overlap MR          : CR-28..47  (idx 27..46)  — 20 CRs communs aux 2 MR
+// Dr Odile BRUN    MR : CR-01..50  (idx 0..49)  — 50 CRs
+// Dr Gautier Glemarec  MR : CR-26..75 (idx 25..74) — 50 CRs
+// Overlap MR          : CR-26..50  (idx 25..49)  — 25 CRs communs aux 2 MR
 const OVERLAP_PM = new Set(r(0,15));
 
 const ASSIGNMENTS = {
@@ -356,8 +356,8 @@ const ASSIGNMENTS = {
   "Estelle":             {role:"PM", crs:[...r(0,15),...r(30,45)], pairedMR:["Dr Odile BRUN","Dr Gautier Glemarec"]},
   "Veronica":            {role:"PM", crs:[...r(0,15),...r(45,60)], pairedMR:["Dr Gautier Glemarec"]},
   "Christophe":          {role:"PM", crs:[...r(0,15),...r(60,75)], pairedMR:["Dr Gautier Glemarec"]},
-  "Dr Odile BRUN":       {role:"MR", crs:r(0,47),  pairedPM:{0:"Sophie",30:"Estelle",45:"Veronica"}},
-  "Dr Gautier Glemarec": {role:"MR", crs:r(27,75), pairedPM:{27:"Sophie",30:"Estelle",45:"Veronica",60:"Christophe"}},
+  "Dr Odile BRUN":       {role:"MR", crs:r(0,50),  pairedPM:{0:"Sophie",30:"Estelle",45:"Veronica"}},
+  "Dr Gautier Glemarec": {role:"MR", crs:r(25,75), pairedPM:{25:"Sophie",30:"Estelle",45:"Veronica",60:"Christophe"}},
 };
 
 function r(a,b){const arr=[];for(let i=a;i<b;i++)arr.push(i);return arr;}

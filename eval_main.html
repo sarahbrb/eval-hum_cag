@@ -486,7 +486,7 @@ async function start(){
     ratings={}; submittedCRs={};
   }
 
-  // 2. Synchroniser avec Airtable pour récupérer les CRs déjà soumis
+  // 2. Synchroniser avec Airtable — Airtable est la source de vérité
   const btn=document.getElementById("gobtn");
   btn.disabled=true; btn.textContent="Vérification…";
   try{
@@ -497,6 +497,8 @@ async function start(){
       headers:{"Authorization":`Bearer ${AT_TOKEN}`}
     });
     const data=await resp.json();
+    // Remplacer (pas accumuler) : Airtable fait foi
+    submittedCRs={};
     (data.records||[]).forEach(rec=>{
       const crId=rec.fields?.cr_id;
       if(crId){const n=parseInt(crId.replace("CR-",""),10);if(!isNaN(n)&&n>=1) submittedCRs[n-1]=true;}

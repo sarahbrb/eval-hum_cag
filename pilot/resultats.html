@@ -411,6 +411,28 @@ function renderIAA(dataByEv){
       </tr>`;
     }
   }
+  // Résumé global
+  const valid=rows.filter(r=>r.kappa!==null);
+  const meanAlpha=valid.length?valid.reduce((s,r)=>s+r.kappa,0)/valid.length:null;
+  const nFiable=valid.filter(r=>r.kappa>=0.80).length;
+  const nAccept=valid.filter(r=>r.kappa>=0.67&&r.kappa<0.80).length;
+  const nFaible=valid.filter(r=>r.kappa<0.67).length;
+  const meanCls=kappaClass(meanAlpha);
+  const meanLabel=meanAlpha!==null?meanAlpha.toFixed(3):"—";
+  tbody+=`<tr style="border-top:2px solid var(--border);background:var(--bg2)">
+    <td colspan="2" style="font-weight:700;font-size:.85rem">Résumé global</td>
+    <td></td>
+    <td></td>
+    <td style="text-align:center">
+      <span class="kappa-chip ${meanCls}" style="font-weight:700">α moy. = ${meanLabel}</span>
+    </td>
+    <td style="font-size:.8rem;color:var(--fg2)">
+      <span style="color:#15803D;font-weight:600">${nFiable} fiable${nFiable>1?"s":""}</span> ·
+      <span style="color:#0369A1;font-weight:600">${nAccept} acceptable${nAccept>1?"s":""}</span> ·
+      <span style="color:#B45309;font-weight:600">${nFaible} à recalibrer</span>
+      <span style="color:var(--fg2)"> / ${valid.length} critères évalués</span>
+    </td>
+  </tr>`;
   return `
     <div class="iaa-legend">
       <span style="font-size:.75rem;font-weight:600;color:var(--fg2);margin-right:4px">Seuils Krippendorff :</span>

@@ -328,7 +328,7 @@ function krippendorffAlpha(ratingsByCR){
     De+=nk[k]*nk[l]*d(k,l);
   }
   Do/=n; De/=n*(n-1);
-  if(De<1e-9) return null;
+  if(De<1e-9) return 1; // De=0 ⟹ tous les scores identiques ⟹ accord parfait par convention
   return Math.round((1-Do/De)*1000)/1000;
 }
 

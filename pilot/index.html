@@ -681,8 +681,8 @@ function renderRight(){
   const d2=ratings[cur]||{};
   document.getElementById("cmt-pm").value=(d2._cmt_pm||"");
   document.getElementById("cmt-mr").value=(d2._cmt_mr||"");
-  document.getElementById("cmt-pm").disabled=readOnlyMode||(evalRole!=="PM");
-  document.getElementById("cmt-mr").disabled=readOnlyMode||(evalRole!=="MR");
+  document.getElementById("cmt-pm").disabled=readOnlyMode||(evalRole!=="PM"&&evalRole!=="ALL");
+  document.getElementById("cmt-mr").disabled=readOnlyMode||(evalRole!=="MR"&&evalRole!=="ALL");
   updateProg();
 }
 

@@ -249,39 +249,32 @@ function scoreChip(val){
 }
 
 function renderTable(ev, dataByEv){
-  // Build header: bloc + crit columns + commentaires + moy
-  let thead=`<tr>
-    <th>CR</th>`;
-  for(const b of BLOCS){
+  // Only show criteria matching the evaluator's role
+  const evRole = EVALUATOR_ROLES[ev];
+  const visBlocs = BLOCS.map(b=>({...b, crit:b.crit.filter(c=>c.role===evRole)})).filter(b=>b.crit.length);
+  const visCrit = visBlocs.flatMap(b=>b.crit);
+  const cmt = evRole==="PM"?"Commentaire PM":"Commentaire MR";
+
+  let thead=`<tr><th>CR</th>`;
+  for(const b of visBlocs){
     thead+=`<th colspan="${b.crit.length}" class="bloc-hdr-cell">${b.name}</th>`;
   }
-  thead+=`<th>Commentaire PM</th><th>Commentaire MR</th></tr>
-  <tr><th></th>`;
-  for(const b of BLOCS){
-    for(const c of b.crit){
-      thead+=`<th class="crit-${c.role.toLowerCase()}" title="${c.name}">${c.name.length>14?c.name.slice(0,13)+"…":c.name}</th>`;
-    }
+  thead+=`<th>${cmt}</th></tr><tr><th></th>`;
+  for(const c of visCrit){
+    thead+=`<th class="crit-${c.role.toLowerCase()}" title="${c.name}">${c.name.length>14?c.name.slice(0,13)+"…":c.name}</th>`;
   }
-  thead+=`<th></th><th></th></tr>`;
+  thead+=`<th></th></tr>`;
 
   let tbody="";
   for(let i=0;i<N_CRS;i++){
     const cr=crId(i);
     const f=dataByEv[ev]?.[cr];
-    if(!f){
-      tbody+=`<tr><td>${cr}</td>`;
-      for(const _c of ALL_CRIT) tbody+=`<td>${scoreChip(null)}</td>`;
-      tbody+=`<td class="cmt-cell"></td><td class="cmt-cell"></td></tr>`;
-      continue;
-    }
     tbody+=`<tr><td>${cr}</td>`;
-    for(const c of ALL_CRIT){
-      tbody+=`<td>${scoreChip(f[fieldKey(c)])}</td>`;
+    for(const c of visCrit){
+      tbody+=`<td>${scoreChip(f?f[fieldKey(c)]:null)}</td>`;
     }
-    const cmtPm=f.pm_commentaire||"";
-    const cmtMr=f.mr_commentaire||"";
-    tbody+=`<td class="cmt-cell">${cmtPm||""}</td>
-      <td class="cmt-cell">${cmtMr||""}</td></tr>`;
+    const cmt=evRole==="PM"?f?.pm_commentaire||"":f?.mr_commentaire||"";
+    tbody+=`<td class="cmt-cell">${cmt}</td></tr>`;
   }
 
   return `<div class="table-wrap">

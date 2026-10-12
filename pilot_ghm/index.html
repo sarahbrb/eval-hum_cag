@@ -798,7 +798,8 @@ async function atSubmitByPM(crId,pmEval,fields){
       headers:{"Authorization":`Bearer ${AT_TOKEN}`}
     });
     const found=await resp.json();
-    const rec=found.records?.[0];
+    // Safety: only patch if the returned record really belongs to this PM
+    const rec=(found.records||[]).find(r=>r.fields?.pm_evaluateur===pmEval);
     const body=JSON.stringify({fields,typecast:true});
     const hdrs={"Authorization":`Bearer ${AT_TOKEN}`,"Content-Type":"application/json"};
     if(rec){

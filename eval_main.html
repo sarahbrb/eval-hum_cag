@@ -383,7 +383,7 @@ function getPairedPM(name, crIdx){
 
 // ── Criteria ─────────────────────────────────────────────────
 const CRITERIA = [
-  {name:"Dose totale",role:"PM",scale:"1-4/NA",q:"La dose totale est-elle dans les plages habituelles pour ce type de cancer ?\n(sein : 40–50 Gy ; boost : 10–16 Gy)",
+  {name:"Dose totale",role:"PM",scale:"1-4/NA",q:"La dose totale prescrite est-elle cohérente avec les standards ?",
    notes:{"1":"Dose totale absente ou clairement erronée.","2":"Dose totale présente mais avec une erreur sur la valeur ou l'unité.","3":"Dose totale globalement correcte avec une légère imprécision.","4":"Dose totale parfaitement cohérente avec les standards de radiothérapie.","N/A":"Dose totale non mentionnée dans le CR."}},
   {name:"Fractionnement",role:"PM",scale:"1-4/NA",q:"Le nombre de séances et la dose par fraction sont-ils cohérents entre eux ?\n(ex. : 25 × 2 Gy = 50 Gy)",
    notes:{"1":"Incohérence mathématique évidente ou fractionnement inexistant.","2":"Fractionnement partiellement correct mais avec une erreur.","3":"Fractionnement globalement correct avec une légère imprécision.","4":"Dose/fraction, nombre de séances et dose totale parfaitement cohérents.","N/A":"Aucun élément de fractionnement mentionné."}},
@@ -419,7 +419,7 @@ const CRITERIA = [
    notes:{"1":"Structure absente ou chaotique.","2":"Structure partielle, plusieurs sections désordonnées.","3":"Structure globalement logique avec quelques éléments mal positionnés.","4":"Structure claire et logique."}},
   {name:"Synthèse & Lisibilité",role:"MR",scale:"1-4",q:"Le texte est-il fluide, concis et adapté au style médical ?\n(lisibilité, concision, absence de répétitions)",
    notes:{"1":"Texte illisible ou clairement non médical.","2":"Texte compréhensible mais avec des maladresses stylistiques.","3":"Texte globalement bien rédigé avec quelques légères imperfections.","4":"Texte naturel, fluide et parfaitement adapté."}},
-  {name:"Correspondance profil → CR",role:"PM",scale:"1-4/NA",q:"Les informations du CR (stade, chirurgie, ER/PR, chimiothérapie…) correspondent-elles aux données du profil patient fourni ?\n⚠ Nécessite d'avoir le profil patient sous les yeux.",
+  {name:"Correspondance profil → CR",role:"PM",scale:"1-4",q:"Les informations du CR (stade, chirurgie, ER/PR, chimiothérapie…) correspondent-elles aux données du profil patient fourni ?\n⚠ Nécessite d'avoir le profil patient sous les yeux.",
    hint:"Le profil peut être mentionné de façon reformulée (et non repris mot pour mot) : cela est considéré comme correct.",
    notes:{"1":"Contradictions majeures entre le profil et le CR.","2":"Contradictions partielles importantes.","3":"Globalement cohérent avec quelques divergences mineures.","4":"Parfaite cohérence entre le profil et le CR.","N/A":"Impossible à évaluer."}},
   {name:"Impression globale",role:"MR",scale:"1-4",q:"Quelle est votre impression globale ?\nCe CR est-il acceptable pour une utilisation clinique ?",

@@ -657,7 +657,7 @@ function renderRight(){
       const val=d[c.name];
       const noteText=val!=null?(c.notes[val]||""):"";
       const noteLbl=val!=null?(SCALE_LABELS[val]||""):"";
-      const isLocked=c.role!==evalRole;
+      const isLocked=evalRole!=="ALL"&&c.role!==evalRole;
       html+=`<div class="crit ${c.role.toLowerCase()}${val!=null?" done":""}${isLocked?" locked":""}" id="crit-${c.name.replace(/[^a-z0-9]/gi,'_')}">
         <div class="crit-main">
           <div class="crit-left">

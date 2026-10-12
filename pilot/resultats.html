@@ -81,6 +81,20 @@ thead .crit-mr{color:var(--mr)}
 #loading{text-align:center;padding:60px;color:var(--fg2)}
 .err-box{background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:.85rem}
 .refresh-info{font-size:.75rem;color:var(--fg2)}
+/* IAA table */
+.iaa-legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;font-size:.75rem}
+.iaa-leg-item{display:flex;align-items:center;gap:5px}
+.iaa-dot{width:10px;height:10px;border-radius:50%}
+.kappa-chip{display:inline-block;padding:2px 9px;border-radius:99px;font-weight:600;font-size:.8rem}
+.k-neg{background:#FEE2E2;color:#991B1B}
+.k-slight{background:#FEF3C7;color:#92400E}
+.k-fair{background:#FED7AA;color:#9A3412}
+.k-mod{background:#E0F2FE;color:#075985}
+.k-sub{background:#D1FAE5;color:#065F46}
+.k-perf{background:#BBF7D0;color:#14532D}
+.k-na{background:#F3F4F6;color:#6B7280}
+.iaa-note{font-size:.75rem;color:var(--fg2);margin-top:14px;padding:10px 14px;background:#F8FAFC;border-radius:8px;border:1px solid var(--border);line-height:1.6}
+
 
 @media(max-width:640px){
   header{padding:10px 14px}
@@ -273,16 +287,135 @@ let activeTab=EVALUATORS[0];
 
 function renderTabs(dataByEv){
   const tabsEl=document.getElementById("tabs");
+  const iaaActive=activeTab==="IAA";
   tabsEl.innerHTML=EVALUATORS.map(ev=>{
     const n=Object.keys(dataByEv[ev]).length;
     return `<div class="tab${ev===activeTab?" active":""}" onclick="switchTab('${ev}')">${ev} <span style="font-size:.7rem;opacity:.7">(${n}/${N_CRS})</span></div>`;
-  }).join("");
-  document.getElementById("tab-content").innerHTML=renderTable(activeTab,dataByEv);
+  }).join("")+`<div class="tab${iaaActive?" active":""}" onclick="switchTab('IAA')" style="margin-left:auto">📊 Accord inter-évaluateurs</div>`;
+  document.getElementById("tab-content").innerHTML=activeTab==="IAA"?renderIAA(dataByEv):renderTable(activeTab,dataByEv);
 }
 
 function switchTab(ev){
   activeTab=ev;
   renderTabs(window._dataByEv);
+}
+
+
+// ── IAA (Kappa de Fleiss + % accord) ─────────────────────────
+function fleissKappa(ratingsByCR){
+  const cats=[1,2,3,4];
+  const items=ratingsByCR.filter(rs=>rs.length>=2);
+  if(!items.length) return null;
+  const Pi=items.map(rs=>{
+    const k=rs.length;
+    const cnt={};cats.forEach(c=>cnt[c]=0);
+    rs.forEach(v=>{if(cats.includes(v))cnt[v]++;});
+    const sum=cats.reduce((a,c)=>a+cnt[c]*(cnt[c]-1),0);
+    return sum/(k*(k-1));
+  });
+  const Pbar=Pi.reduce((a,b)=>a+b,0)/items.length;
+  const all=items.flat().filter(v=>cats.includes(v));
+  if(!all.length) return null;
+  const pj={};cats.forEach(c=>pj[c]=all.filter(v=>v===c).length/all.length);
+  const Pe=cats.reduce((a,c)=>a+pj[c]**2,0);
+  if(Pe>=1-1e-9) return null;
+  return Math.round((Pbar-Pe)/(1-Pe)*1000)/1000;
+}
+
+function pctAgree(ratingsByCR){
+  let ag=0,tot=0;
+  for(const rs of ratingsByCR){
+    for(let i=0;i<rs.length;i++)for(let j=i+1;j<rs.length;j++){
+      if(rs[i]===rs[j])ag++;tot++;
+    }
+  }
+  return tot?Math.round(ag/tot*100):null;
+}
+
+function kappaClass(k){
+  if(k===null) return "k-na";
+  if(k<0) return "k-neg";
+  if(k<=0.20) return "k-slight";
+  if(k<=0.40) return "k-fair";
+  if(k<=0.60) return "k-mod";
+  if(k<=0.80) return "k-sub";
+  return "k-perf";
+}
+function kappaLabel(k){
+  if(k===null) return "Données insuffisantes";
+  if(k<0) return "Désaccord";
+  if(k<=0.20) return "Quasi nul";
+  if(k<=0.40) return "Faible";
+  if(k<=0.60) return "Modéré";
+  if(k<=0.80) return "Bon";
+  return "Excellent";
+}
+
+function computeIAA(dataByEv){
+  return ALL_CRIT.map(c=>{
+    const key=fieldKey(c);
+    const byCR=[];
+    for(let i=0;i<N_CRS;i++){
+      const cr=crId(i);
+      const vals=EVALUATORS.map(ev=>dataByEv[ev]?.[cr]?.[key])
+        .filter(v=>v!=null&&v!==0&&v!=="N/A"&&Number.isInteger(v));
+      if(vals.length>=2) byCR.push(vals);
+    }
+    return {crit:c, kappa:fleissKappa(byCR), pct:pctAgree(byCR), n:byCR.length};
+  });
+}
+
+function renderIAA(dataByEv){
+  const rows=computeIAA(dataByEv);
+  let tbody="";
+  let prevBloc="";
+  for(const b of BLOCS){
+    for(const c of b.crit){
+      const row=rows.find(r=>r.crit.name===c.name);
+      const kLabel=row.kappa!==null?row.kappa.toFixed(3):"—";
+      const pLabel=row.pct!==null?row.pct+"%":"—";
+      const cls=kappaClass(row.kappa);
+      const interp=kappaLabel(row.kappa);
+      if(b.name!==prevBloc){
+        tbody+=`<tr><td colspan="6" style="background:#EEF2FF;color:#4338CA;font-weight:700;font-size:.72rem;padding:5px 10px">${b.name}</td></tr>`;
+        prevBloc=b.name;
+      }
+      tbody+=`<tr>
+        <td style="font-weight:500">${c.name}</td>
+        <td><span style="font-size:.7rem;font-weight:600;padding:2px 7px;border-radius:99px;background:${c.role==="PM"?"#EFF6FF":"#FCE7F3"};color:${c.role==="PM"?"#2563EB":"#BE185D"}">${c.role}</span></td>
+        <td style="text-align:center">${row.n}</td>
+        <td style="text-align:center;font-weight:600">${pLabel}</td>
+        <td style="text-align:center"><span class="kappa-chip ${cls}">${kLabel}</span></td>
+        <td>${interp}</td>
+      </tr>`;
+    }
+  }
+  return `
+    <div class="iaa-legend">
+      <span style="font-size:.75rem;font-weight:600;color:var(--fg2);margin-right:4px">Interprétation (Landis & Koch) :</span>
+      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#FEE2E2"></span>&lt;0 Désaccord</span>
+      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#FEF3C7"></span>0–0.20 Quasi nul</span>
+      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#FED7AA"></span>0.21–0.40 Faible</span>
+      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#E0F2FE"></span>0.41–0.60 Modéré</span>
+      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#D1FAE5"></span>0.61–0.80 Bon</span>
+      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#BBF7D0"></span>0.81–1.00 Excellent</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Critère</th><th>Rôle</th><th style="text-align:center">CRs (n)</th>
+          <th style="text-align:center">% Accord</th>
+          <th style="text-align:center">Kappa de Fleiss</th>
+          <th>Interprétation</th>
+        </tr></thead>
+        <tbody>${tbody}</tbody>
+      </table>
+    </div>
+    <div class="iaa-note">
+      <strong>Note :</strong> Le Kappa de Fleiss mesure l'accord entre les 3 évaluatrices au-delà du hasard.
+      Le % d'accord est la proportion de paires d'évaluatrices ayant attribué la même note.
+      Les critères avec N/A sont exclus du calcul. <em>n</em> = nombre de CRs évalués par au moins 2 évaluatrices.
+    </div>`;
 }
 
 async function loadAll(){

@@ -422,12 +422,12 @@ const SCALE_LABELS = {"1":"Pas du tout","2":"Partiellement","3":"Globalement","4
 
 // ── State ─────────────────────────────────────────────────────
 const SKEY_MAIN = "cag_eval_main_v1";
-let evalName="", evalRole="", cur=0, ratings={}, filter="all", submittedCRs={};
+let evalName="", evalRole="", cur=0, ratings={}, filter="all", submittedCRs={}, view="dashboard";
 let myCRs=[], pmAnswersCache={}, readOnlyMode=false;
 
 // ── Persistence ───────────────────────────────────────────────
 function save(){
-  try{localStorage.setItem(SKEY_MAIN,JSON.stringify({evalName,evalRole,ratings,submittedCRs}));}catch(e){}
+  try{localStorage.setItem(SKEY_MAIN,JSON.stringify({evalName,evalRole,ratings,submittedCRs,cur,view}));}catch(e){}
 }
 function loadState(){
   try{return JSON.parse(localStorage.getItem(SKEY_MAIN)||"null");}catch(e){return null;}
@@ -534,7 +534,7 @@ function launch(){
 
 function logout(){
   if(!confirm("Revenir à l'identification ? La progression non soumise reste sauvegardée.")) return;
-  evalName=""; evalRole=""; myCRs=[];
+  evalName=""; evalRole=""; myCRs=[]; view="dashboard"; cur=0;
   document.getElementById("app").style.display="none";
   document.getElementById("reg").style.display="";
   document.getElementById("rname").value="";
@@ -559,6 +559,7 @@ function crStatus(idx){
 }
 
 function showDashboard(){
+  view="dashboard"; save();
   showView("dashboard");
   const total=myCRs.length;
   const done=myCRs.filter(i=>submittedCRs[i]).length;
@@ -587,7 +588,8 @@ function showDashboard(){
 
 // ── Eval view ─────────────────────────────────────────────────
 async function openCR(idx, readOnly=false){
-  cur=idx; readOnlyMode=readOnly;
+  cur=idx; view="cr"; readOnlyMode=readOnly;
+  save();
   showView("eval");
   const num=`CR-${String(idx+1).padStart(2,"0")}`;
   document.getElementById("eval-cr-id").textContent=num;
@@ -944,7 +946,15 @@ const CRS = [{"id": 0, "cr_text": "Madame RAYMOND, née LOPEZ Élise, âgée de 
 (function init(){
   const saved=loadState();
   if(saved&&saved.evalName&&saved.evalRole&&ASSIGNMENTS[saved.evalName]){
+    evalName=saved.evalName; evalRole=saved.evalRole;
     ratings=saved.ratings||{}; submittedCRs=saved.submittedCRs||{};
+    myCRs=ASSIGNMENTS[evalName].crs;
+    const savedView=saved.view||"dashboard";
+    const savedCur=saved.cur??0;
+    launch();
+    if(savedView==="cr"&&myCRs.includes(savedCur)){
+      openCR(savedCur,!!submittedCRs[savedCur]);
+    }
   }
 })();
 </script>

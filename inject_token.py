@@ -31,12 +31,13 @@ else:
 
 # ── Phase pilote GHM (4 PM + 2 MR cliniciens) ────────────────────
 if ghm_table:
-    with open("pilot_ghm/index.html", "r", encoding="utf-8") as f:
-        content = f.read()
-    content = content.replace("%%AT_TOKEN%%", token)
-    content = content.replace("%%GHM_TABLE_ID%%", ghm_table)
-    with open("pilot_ghm/index.html", "w", encoding="utf-8") as f:
-        f.write(content)
-    print("Token + GHM_TABLE_ID injectés dans pilot_ghm/index.html")
+    for fname in ["pilot_ghm/index.html", "pilot_ghm/resultats.html"]:
+        with open(fname, "r", encoding="utf-8") as f:
+            content = f.read()
+        content = content.replace("%%AT_TOKEN%%", token)
+        content = content.replace("%%GHM_TABLE_ID%%", ghm_table)
+        with open(fname, "w", encoding="utf-8") as f:
+            f.write(content)
+        print(f"Token + GHM_TABLE_ID injectés dans {fname}")
 else:
     print("GHM_TABLE_ID absent — pilot_ghm/ ignoré", file=sys.stderr)

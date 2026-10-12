@@ -302,24 +302,34 @@ function switchTab(ev){
 
 
 // ── IAA (Kappa de Fleiss + % accord) ─────────────────────────
-function fleissKappa(ratingsByCR){
+function krippendorffAlpha(ratingsByCR){
+  // Alpha de Krippendorff — distance intervalle d²(k,l)=(k-l)²
   const cats=[1,2,3,4];
-  const items=ratingsByCR.filter(rs=>rs.length>=2);
-  if(!items.length) return null;
-  const Pi=items.map(rs=>{
-    const k=rs.length;
-    const cnt={};cats.forEach(c=>cnt[c]=0);
-    rs.forEach(v=>{if(cats.includes(v))cnt[v]++;});
-    const sum=cats.reduce((a,c)=>a+cnt[c]*(cnt[c]-1),0);
-    return sum/(k*(k-1));
-  });
-  const Pbar=Pi.reduce((a,b)=>a+b,0)/items.length;
-  const all=items.flat().filter(v=>cats.includes(v));
-  if(!all.length) return null;
-  const pj={};cats.forEach(c=>pj[c]=all.filter(v=>v===c).length/all.length);
-  const Pe=cats.reduce((a,c)=>a+pj[c]**2,0);
-  if(Pe>=1-1e-9) return null;
-  return Math.round((Pbar-Pe)/(1-Pe)*1000)/1000;
+  const units=ratingsByCR.filter(rs=>rs.length>=2);
+  if(!units.length) return null;
+  // Matrice de coïncidences
+  const o={};
+  for(const k of cats){o[k]={};for(const l of cats)o[k][l]=0;}
+  for(const rs of units){
+    const r=rs.length;
+    for(let g=0;g<r;g++)for(let h=0;h<r;h++){
+      if(g===h) continue;
+      const k=rs[g],l=rs[h];
+      if(cats.includes(k)&&cats.includes(l)) o[k][l]+=1/(r-1);
+    }
+  }
+  const nk={};for(const k of cats) nk[k]=cats.reduce((s,l)=>s+o[k][l],0);
+  const n=cats.reduce((s,k)=>s+nk[k],0);
+  if(n<2) return null;
+  const d=(k,l)=>(k-l)**2;
+  let Do=0,De=0;
+  for(const k of cats)for(const l of cats){
+    Do+=o[k][l]*d(k,l);
+    De+=nk[k]*nk[l]*d(k,l);
+  }
+  Do/=n; De/=n*(n-1);
+  if(De<1e-9) return null;
+  return Math.round((1-Do/De)*1000)/1000;
 }
 
 function pctAgree(ratingsByCR){
@@ -335,20 +345,20 @@ function pctAgree(ratingsByCR){
 function kappaClass(k){
   if(k===null) return "k-na";
   if(k<0) return "k-neg";
-  if(k<=0.20) return "k-slight";
-  if(k<=0.40) return "k-fair";
-  if(k<=0.60) return "k-mod";
-  if(k<=0.80) return "k-sub";
+  if(k<0.20) return "k-slight";
+  if(k<0.40) return "k-fair";
+  if(k<0.67) return "k-mod";
+  if(k<0.80) return "k-sub";
   return "k-perf";
 }
 function kappaLabel(k){
   if(k===null) return "Données insuffisantes";
   if(k<0) return "Désaccord";
-  if(k<=0.20) return "Quasi nul";
-  if(k<=0.40) return "Faible";
-  if(k<=0.60) return "Modéré";
-  if(k<=0.80) return "Bon";
-  return "Excellent";
+  if(k<0.20) return "Très faible";
+  if(k<0.40) return "Faible";
+  if(k<0.67) return "Modéré (< seuil Krippendorff)";
+  if(k<0.80) return "Acceptable (≥ 0.67)";
+  return "Fiable (≥ 0.80)";
 }
 
 function computeIAA(dataByEv){
@@ -361,7 +371,7 @@ function computeIAA(dataByEv){
         .filter(v=>v!=null&&v!==0&&v!=="N/A"&&Number.isInteger(v));
       if(vals.length>=2) byCR.push(vals);
     }
-    return {crit:c, kappa:fleissKappa(byCR), pct:pctAgree(byCR), n:byCR.length};
+    return {crit:c, kappa:krippendorffAlpha(byCR), pct:pctAgree(byCR), n:byCR.length};
   });
 }
 
@@ -392,29 +402,28 @@ function renderIAA(dataByEv){
   }
   return `
     <div class="iaa-legend">
-      <span style="font-size:.75rem;font-weight:600;color:var(--fg2);margin-right:4px">Interprétation (Landis & Koch) :</span>
+      <span style="font-size:.75rem;font-weight:600;color:var(--fg2);margin-right:4px">Seuils Krippendorff :</span>
       <span class="iaa-leg-item"><span class="iaa-dot" style="background:#FEE2E2"></span>&lt;0 Désaccord</span>
-      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#FEF3C7"></span>0–0.20 Quasi nul</span>
-      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#FED7AA"></span>0.21–0.40 Faible</span>
-      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#E0F2FE"></span>0.41–0.60 Modéré</span>
-      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#D1FAE5"></span>0.61–0.80 Bon</span>
-      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#BBF7D0"></span>0.81–1.00 Excellent</span>
+      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#FED7AA"></span>&lt;0.40 Faible</span>
+      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#E0F2FE"></span>&lt;0.67 Modéré</span>
+      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#D1FAE5"></span>≥ 0.67 Acceptable</span>
+      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#BBF7D0"></span>≥ 0.80 Fiable</span>
     </div>
     <div class="table-wrap">
       <table>
         <thead><tr>
           <th>Critère</th><th>Rôle</th><th style="text-align:center">CRs (n)</th>
           <th style="text-align:center">% Accord</th>
-          <th style="text-align:center">Kappa de Fleiss</th>
+          <th style="text-align:center">Alpha de Krippendorff</th>
           <th>Interprétation</th>
         </tr></thead>
         <tbody>${tbody}</tbody>
       </table>
     </div>
     <div class="iaa-note">
-      <strong>Note :</strong> Le Kappa de Fleiss mesure l'accord entre les 3 évaluatrices au-delà du hasard.
+      <strong>Note :</strong> L'Alpha de Krippendorff mesure l'accord entre les 3 évaluatrices, corrigé pour le hasard, sur une échelle ordinale (distance intervalle d²=(k−l)²).
       Le % d'accord est la proportion de paires d'évaluatrices ayant attribué la même note.
-      Les critères avec N/A sont exclus du calcul. <em>n</em> = nombre de CRs évalués par au moins 2 évaluatrices.
+      Les critères avec N/A sont exclus. Seuils recommandés : α ≥ 0.80 = fiable, α ≥ 0.67 = acceptable. <em>n</em> = CRs notés par ≥ 2 évaluatrices.
     </div>`;
 }
 

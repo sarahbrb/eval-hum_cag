@@ -941,10 +941,7 @@ const CRS = [{"id": 0, "cr_text": "Madame RAYMOND, née LOPEZ Élise, âgée de 
 (function init(){
   const saved=loadState();
   if(saved&&saved.evalName&&saved.evalRole&&ASSIGNMENTS[saved.evalName]){
-    evalName=saved.evalName; evalRole=saved.evalRole;
     ratings=saved.ratings||{}; submittedCRs=saved.submittedCRs||{};
-    myCRs=ASSIGNMENTS[evalName].crs;
-    launch();
   }
 })();
 </script>

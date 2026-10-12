@@ -197,15 +197,10 @@ html,body{height:100%;font-family:"Inter",system-ui,sans-serif;font-size:14px;ba
       <label>Votre nom</label>
       <select id="rname" onchange="checkGo()" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg2);font-family:inherit;font-size:.9375rem;color:var(--fg);cursor:pointer">
         <option value="">— Choisissez votre nom —</option>
-        <optgroup label="Physicien Médical">
-          <option value="Sophie">Sophie</option>
-          <option value="Estelle">Estelle</option>
-          <option value="Veronica">Veronica</option>
-          <option value="Christophe">Christophe</option>
-        </optgroup>
-        <optgroup label="Médecin Radiothérapeute">
-          <option value="Dr Odile BRUN">Dr Odile BRUN</option>
-          <option value="Dr Gautier Glemarec">Dr Gautier Glemarec</option>
+        <optgroup label="Évaluation complète (pilote)">
+          <option value="Diandra">Diandra</option>
+          <option value="Markarit">Markarit</option>
+          <option value="Lisa">Lisa</option>
         </optgroup>
       </select>
     </div>
@@ -337,20 +332,15 @@ const AT_URL=`https://api.airtable.com/v0/${AT_BASE}/${AT_TABLE}`;
 const SKEY = "cag_eval_main_v1";
 
 // Evaluator assignments (0-indexed CR indices)
-// ── PHASE PILOTE ── 5 CRs par évaluateur, tous en commun (100% overlap)
-// Toutes les PMs et les 2 MRs évaluent CR-01..05
-// Estelle est PM pivot (crée les vrais records MR)
-// Sophie / Veronica / Christophe → records IAA sur CR-01..05
+// ── PHASE PILOTE ── 3 évaluatrices informaticiennes, rôle ALL (PM+MR)
+// Chacune évalue les 5 mêmes CRs avec TOUS les critères (PM + MR)
 const OVERLAP_PM = new Set(r(0,5));
 const OVERLAP_MR = new Set(r(0,5));
 
 const ASSIGNMENTS = {
-  "Sophie":              {role:"PM", crs:r(0,5), pairedMR:["Dr Odile BRUN"]},
-  "Estelle":             {role:"PM", crs:r(0,5), pairedMR:["Dr Odile BRUN","Dr Gautier Glemarec"]},
-  "Veronica":            {role:"PM", crs:r(0,5), pairedMR:["Dr Gautier Glemarec"]},
-  "Christophe":          {role:"PM", crs:r(0,5), pairedMR:["Dr Gautier Glemarec"]},
-  "Dr Odile BRUN":       {role:"MR", crs:r(0,5), pairedPM:{0:"Estelle"}},
-  "Dr Gautier Glemarec": {role:"MR", crs:r(0,5), pairedPM:{0:"Estelle"}},
+  "Diandra":  {role:"ALL", crs:r(0,5)},
+  "Markarit": {role:"ALL", crs:r(0,5)},
+  "Lisa":     {role:"ALL", crs:r(0,5)},
 };
 
 function r(a,b){const arr=[];for(let i=a;i<b;i++)arr.push(i);return arr;}
@@ -442,7 +432,7 @@ function loadState(){
 }
 
 // ── Role helpers ──────────────────────────────────────────────
-function myRoleCrit(){ return CRITERIA.filter(c=>c.role===evalRole); }
+function myRoleCrit(){ return evalRole==="ALL"?CRITERIA:CRITERIA.filter(c=>c.role===evalRole); }
 function myCrit(){
   if(filter==="all") return CRITERIA;
   if(filter==="PM") return CRITERIA.filter(c=>c.role==="PM");
@@ -458,10 +448,10 @@ function checkGo(){
   const rdiv=document.getElementById("role-display");
   if(a){
     rdiv.style.display="block";
-    chip.textContent=a.role==="PM"?"Physicien Médical":"Médecin Radiothérapeute";
-    chip.style.background=a.role==="PM"?"var(--pm-bg)":"var(--mr-bg)";
-    chip.style.color=a.role==="PM"?"var(--pm-text)":"var(--mr-text)";
-    chip.style.border=a.role==="PM"?"1px solid var(--pm-border)":"1px solid var(--mr-border)";
+    chip.textContent=a.role==="ALL"?"Évaluation complète (PM + MR)":a.role==="PM"?"Physicien Médical":"Médecin Radiothérapeute";
+    chip.style.background=a.role==="ALL"?"#F59E0B":a.role==="PM"?"var(--pm-bg)":"var(--mr-bg)";
+    chip.style.color=a.role==="ALL"?"#fff":a.role==="PM"?"var(--pm-text)":"var(--mr-text)";
+    chip.style.border=a.role==="ALL"?"none":a.role==="PM"?"1px solid var(--pm-border)":"1px solid var(--mr-border)";
   }else{
     rdiv.style.display="none";
   }
@@ -493,9 +483,9 @@ async function start(){
   const btn=document.getElementById("gobtn");
   btn.disabled=true; btn.textContent="Vérification…";
   try{
-    const formula=role==="PM"
-      ?`{pm_evaluateur}="${name}"`
-      :`AND({mr_evaluateur}="${name}",{statut}="Complet")`;
+    const formula=role==="ALL"||role==="MR"
+      ?`AND({mr_evaluateur}="${name}",{statut}="Complet")`
+      :`{pm_evaluateur}="${name}"`;
     const resp=await fetch(`${AT_URL}?filterByFormula=${encodeURIComponent(formula)}&fields%5B%5D=cr_id`,{
       headers:{"Authorization":`Bearer ${AT_TOKEN}`}
     });
@@ -517,21 +507,25 @@ function launch(){
   document.getElementById("app").style.display="flex";
   document.getElementById("hdr-user").textContent=evalName;
   const chip=document.getElementById("hdr-role-chip");
-  chip.textContent=evalRole==="PM"?"Physicien Médical":"Médecin Radiothérapeute";
+  chip.textContent=evalRole==="ALL"?"Évaluation complète":evalRole==="PM"?"Physicien Médical":"Médecin Radiothérapeute";
   chip.className="hdr-role-chip "+(evalRole==="PM"?"pm":"mr");
-  document.getElementById("cmt-pm").disabled=(evalRole!=="PM");
-  document.getElementById("cmt-mr").disabled=(evalRole!=="MR");
-  document.getElementById("cmt-pm-box").style.display=evalRole==="PM"?"block":"none";
-  document.getElementById("cmt-mr-box").style.display=evalRole==="MR"?"block":"none";
-  // Évaluation en parallèle : chaque profil voit uniquement ses propres critères
-  filter=evalRole;
-  document.getElementById("ftab-all").style.display="none";
-  if(evalRole==="PM"){
-    document.getElementById("ftab-pm").classList.add("on");
-    document.getElementById("ftab-mr").style.display="none";
+  document.getElementById("cmt-pm").disabled=false;
+  document.getElementById("cmt-mr").disabled=false;
+  document.getElementById("cmt-pm-box").style.display=(evalRole==="PM"||evalRole==="ALL")?"block":"none";
+  document.getElementById("cmt-mr-box").style.display=(evalRole==="MR"||evalRole==="ALL")?"block":"none";
+  if(evalRole==="ALL"){
+    filter="all";
+    document.getElementById("ftab-all").classList.add("on");
   }else{
-    document.getElementById("ftab-mr").classList.add("on");
-    document.getElementById("ftab-pm").style.display="none";
+    filter=evalRole;
+    document.getElementById("ftab-all").style.display="none";
+    if(evalRole==="PM"){
+      document.getElementById("ftab-pm").classList.add("on");
+      document.getElementById("ftab-mr").style.display="none";
+    }else{
+      document.getElementById("ftab-mr").classList.add("on");
+      document.getElementById("ftab-pm").style.display="none";
+    }
   }
   showDashboard();
 }
@@ -580,7 +574,7 @@ function showDashboard(){
     const nameVal=name.split(" : ")[1]||"";
     const card=document.createElement("div");
     card.className="cr-card"+(submitted?" done":st==="progress"?" pm-done":"");
-    const isOverlap=(evalRole==="PM"&&OVERLAP_PM.has(idx))||(evalRole==="MR"&&OVERLAP_MR.has(idx));
+    const isOverlap=evalRole==="ALL"||(evalRole==="PM"&&OVERLAP_PM.has(idx))||(evalRole==="MR"&&OVERLAP_MR.has(idx));
     card.innerHTML=`<div class="cr-card-id">CR-${String(idx+1).padStart(2,"0")}${isOverlap?' <span title="CR commun IAA">⭐</span>':""}</div>
       <div class="cr-card-name">${nameVal}</div>
       <div class="cr-card-status">${submitted?"✅ Soumis":st==="progress"?"🟡 En cours":"⬜ Non commencé"}</div>`;
@@ -610,11 +604,9 @@ async function openCR(idx, readOnly=false){
 async function loadSubmittedAnswers(idx){
   const crId=`CR-${String(idx+1).padStart(2,"0")}`;
   try{
-    // PM: filter by pm_evaluateur (mr_evaluateur may be any MR name)
-    // MR: filter by mr_evaluateur
-    const formula=evalRole==="PM"
-      ?`AND({cr_id}="${crId}",{pm_evaluateur}="${evalName}")`
-      :`AND({cr_id}="${crId}",{mr_evaluateur}="${evalName}")`;
+    const formula=evalRole==="ALL"||evalRole==="MR"
+      ?`AND({cr_id}="${crId}",{mr_evaluateur}="${evalName}")`
+      :`AND({cr_id}="${crId}",{pm_evaluateur}="${evalName}")`;
     const resp=await fetch(`${AT_URL}?filterByFormula=${encodeURIComponent(formula)}&maxRecords=1`,{
       headers:{"Authorization":`Bearer ${AT_TOKEN}`}
     });
@@ -622,13 +614,14 @@ async function loadSubmittedAnswers(idx){
     const rec=data.records?.[0];
     if(!rec?.fields) return;
     const f=rec.fields, d={};
-    const prefix=evalRole==="PM"?"pm_":"mr_";
-    for(const c of CRITERIA.filter(x=>x.role===evalRole)){
+    const cList=evalRole==="ALL"?CRITERIA:CRITERIA.filter(x=>x.role===evalRole);
+    for(const c of cList){
+      const prefix=c.role==="PM"?"pm_":"mr_";
       const v=f[prefix+c.name];
       if(v!=null) d[c.name]=String(v);
     }
-    if(evalRole==="PM"&&f.pm_commentaire) d._cmt_pm=f.pm_commentaire;
-    if(evalRole==="MR"&&f.mr_commentaire) d._cmt_mr=f.mr_commentaire;
+    if(f.pm_commentaire) d._cmt_pm=f.pm_commentaire;
+    if(f.mr_commentaire) d._cmt_mr=f.mr_commentaire;
     ratings[idx]=d;
   }catch(e){}
 }
@@ -695,7 +688,7 @@ function renderRight(){
 
 function rate(cname,val){
   const crit=CRITERIA.find(c=>c.name===cname);
-  if(crit&&crit.role!==evalRole) return;
+  if(crit&&evalRole!=="ALL"&&crit.role!==evalRole) return;
   if(!ratings[cur]) ratings[cur]={};
   const d=ratings[cur];
   if(d[cname]===val){delete d[cname];}else{d[cname]=val;}
@@ -727,8 +720,8 @@ function rate(cname,val){
 
 function saveCmt(who){
   if(readOnlyMode) return;
-  if(who==="pm"&&evalRole!=="PM") return;
-  if(who==="mr"&&evalRole!=="MR") return;
+  if(who==="pm"&&evalRole!=="PM"&&evalRole!=="ALL") return;
+  if(who==="mr"&&evalRole!=="MR"&&evalRole!=="ALL") return;
   if(!ratings[cur]) ratings[cur]={};
   ratings[cur][`_cmt_${who}`]=document.getElementById(`cmt-${who}`).value;
   save();
@@ -834,11 +827,16 @@ async function submitCR(){
   addStatus("pending","<span class='spin'>⏳</span>","Envoi vers la base de données…","sheets-status");
 
   let ok=false;
-  if(evalRole==="PM"){
+  if(evalRole==="ALL"){
+    // Rôle pilote : 1 record unique avec tous les champs PM + MR
+    const fields={cr_id:crId,statut:"Complet",pm_evaluateur:evalName,pm_timestamp:ts,mr_evaluateur:evalName,mr_timestamp:ts,pm_commentaire:d._cmt_pm||"",mr_commentaire:d._cmt_mr||""};
+    for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+c.name]=toNum(d[c.name]);
+    for(const c of CRITERIA.filter(x=>x.role==="MR")) fields["mr_"+c.name]=toNum(d[c.name]);
+    ok=await atSubmit(crId,evalName,fields);
+  } else if(evalRole==="PM"){
     const pairedMRs=getPairedMRs(evalName,cur);
     let sent=0;
     for(const mrName of pairedMRs){
-      // Records IAA (pas de vrai MR) → statut toujours PM_fait
       const isIAA=mrName.startsWith("IAA-");
       let statut="PM_fait";
       if(!isIAA){
@@ -857,10 +855,8 @@ async function submitCR(){
       ok=await atSubmit(crId,"",fields);
     }
   } else {
-    // Si le PM a déjà soumis → Complet, sinon MR_fait
     const existing=await atFindRecord(crId,evalName);
     const statut=existing?.fields?.pm_evaluateur?"Complet":"MR_fait";
-    // cr_id obligatoire pour retrouver ce record quand le PM soumettra ensuite
     const fields={cr_id:crId,statut,mr_evaluateur:evalName,mr_timestamp:ts,mr_commentaire:d._cmt_mr||""};
     for(const c of CRITERIA.filter(x=>x.role==="MR")) fields["mr_"+c.name]=toNum(d[c.name]);
     ok=await atSubmit(crId,evalName,fields);

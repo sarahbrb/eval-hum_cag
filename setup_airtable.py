@@ -32,7 +32,6 @@ FIELDS = [
     ("pm_Fractionnement",                  "number",         {"precision": 0}),
     ("pm_Technique",                       "number",         {"precision": 0}),
     ("pm_Hall. dosimétriques",             "number",         {"precision": 0}),
-    ("pm_Terminologie",                    "number",         {"precision": 0}),
     ("pm_commentaire",                     "multilineText",  None),
     ("mr_evaluateur",                      "singleLineText", None),
     ("mr_timestamp",                       "singleLineText", None),
@@ -47,10 +46,11 @@ FIELDS = [
     ("mr_Toxicités (CTCAE)",               "number",         {"precision": 0}),
     ("mr_Bilan de fin",                    "number",         {"precision": 0}),
     ("mr_Suites thérapeutiques",           "number",         {"precision": 0}),
+    ("mr_Terminologie",                    "number",         {"precision": 0}),
+    ("mr_Lisibilité & style",              "number",         {"precision": 0}),
     ("mr_Organisation",                    "number",         {"precision": 0}),
-    ("mr_Synthèse & Lisibilité",           "number",         {"precision": 0}),
+    ("mr_Synthèse",                        "number",         {"precision": 0}),
     ("pm_Correspondance profil → CR",      "number",         {"precision": 0}),
-    ("mr_Impression globale",              "number",         {"precision": 0}),
     ("mr_commentaire",                     "multilineText",  None),
 ]
 

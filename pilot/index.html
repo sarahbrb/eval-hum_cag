@@ -395,27 +395,26 @@ const CRITERIA = [
    notes:{"1":"Bilan absent.","2":"Bilan partiellement présent.","3":"Bilan globalement présent avec des éléments manquants.","4":"Bilan de fin complet et cohérent.","N/A":"Non applicable."}},
   {name:"Suites thérapeutiques",role:"MR",scale:"1-4/NA",q:"Les suites thérapeutiques (surveillance, hormonothérapie) sont-elles détaillées ?",
    notes:{"1":"Aucune suite thérapeutique mentionnée.","2":"Suites partiellement mentionnées.","3":"Suites globalement détaillées avec un élément incomplet.","4":"Plan de suivi complet et hormonothérapie adjuvante précisés.","N/A":"Non applicable."}},
-  {name:"Terminologie",role:"PM",scale:"1-4",q:"La terminologie radiothérapeutique est-elle correcte et standardisée ?",
+  {name:"Terminologie",role:"MR",scale:"1-4",q:"La terminologie radiothérapeutique est-elle correcte et standardisée ?",
    notes:{"1":"Terminologie largement incorrecte.","2":"Quelques erreurs terminologiques importantes.","3":"Terminologie globalement correcte avec quelques imprécisions.","4":"Vocabulaire radiothérapeutique précis et standardisé."}},
+  {name:"Lisibilité & style",role:"MR",scale:"1-4",q:"Le texte est-il naturel, fluide et adapté au style d'un CR médical ?",
+   notes:{"1":"Texte illisible ou clairement non médical.","2":"Texte compréhensible mais avec des maladresses stylistiques importantes.","3":"Texte globalement fluide avec quelques légères imperfections de style.","4":"Texte naturel, fluide et parfaitement adapté au style d'un CR médical professionnel."}},
   {name:"Organisation",role:"MR",scale:"1-4",q:"La structure du CR est-elle logique et conforme à l'attendu ?",
    notes:{"1":"Structure absente ou chaotique.","2":"Structure partielle, plusieurs sections désordonnées.","3":"Structure globalement logique avec quelques éléments mal positionnés.","4":"Structure claire et logique."}},
-  {name:"Synthèse & Lisibilité",role:"MR",scale:"1-4",q:"Le texte est-il fluide, concis et adapté au style médical ?",
-   notes:{"1":"Texte illisible ou clairement non médical.","2":"Texte compréhensible mais avec des maladresses stylistiques.","3":"Texte globalement bien rédigé avec quelques légères imperfections.","4":"Texte naturel, fluide et parfaitement adapté."}},
+  {name:"Synthèse",role:"MR",scale:"1-4",q:"Le CR est-il concis et va-t-il à l'essentiel ?",
+   notes:{"1":"CR très verbeux avec de nombreuses répétitions.","2":"Quelques répétitions ou longueurs notables affectant la lisibilité.","3":"CR globalement concis avec quelques redondances mineures.","4":"CR parfaitement concis, pertinent, sans répétition ni information superflue."}},
   {name:"Correspondance profil → CR",role:"PM",scale:"1-4/NA",q:"Le CR est-il cohérent avec le profil patient fourni ?",
    hint:"Le profil peut être mentionné de façon reformulée (et non repris mot pour mot) : cela est considéré comme correct.",
    notes:{"1":"Contradictions majeures entre le profil et le CR.","2":"Contradictions partielles importantes.","3":"Globalement cohérent avec quelques divergences mineures.","4":"Parfaite cohérence entre le profil et le CR.","N/A":"Impossible à évaluer."}},
-  {name:"Impression globale",role:"MR",scale:"1-4",q:"Quelle est votre impression globale ? Ce CR est-il acceptable pour une utilisation clinique ?",
-   notes:{"1":"CR inacceptable : erreurs majeures.","2":"CR nécessitant des corrections importantes.","3":"CR globalement acceptable avec quelques réserves.","4":"CR parfaitement acceptable et prêt pour une utilisation clinique."}},
 ];
 
 const BLOCS = [
-  {name:"1. Dosimétrie & Technique",  range:[0,2]},
-  {name:"2. Volumes & Chirurgie",      range:[3,4]},
-  {name:"3. Traitement systémique",    range:[5,5]},
-  {name:"4. Hallucinations",           range:[6,8]},
-  {name:"5. Contenu clinique",         range:[9,14]},
-  {name:"6. Rédaction",               range:[15,17]},
-  {name:"7. Cohérence & Impression",  range:[18,19]},
+  {name:"1. Réalisme dosimétrique",          range:[0,2]},
+  {name:"2. Cohérence diag. & traitement",   range:[3,5]},
+  {name:"3. Intégrité",                      range:[6,8]},
+  {name:"4. Complétude",                     range:[9,14]},
+  {name:"5. Forme",                          range:[15,18]},
+  {name:"6. Correspondance profil → CR",     range:[19,19]},
 ];
 
 const SCALE_LABELS = {"1":"Pas du tout","2":"Partiellement","3":"Globalement","4":"Complètement","N/A":"N/A"};
@@ -793,7 +792,7 @@ async function loadPMAnswers(crIdx){
 
 function renderPMAnswers(data){
   const content=document.getElementById("pm-answers-content");
-  const PM_CRITERIA_NAMES=["Dose totale","Fractionnement","Technique","Hall. dosimétriques","Terminologie"];
+  const PM_CRITERIA_NAMES=["Dose totale","Fractionnement","Technique","Hall. dosimétriques","Correspondance profil → CR"];
   let html=`<div style="font-size:.75rem;color:var(--fg2);margin-bottom:8px">Évalué par <strong>${data.pm_evaluateur}</strong></div>`;
   html+=`<div class="pm-grid">`;
   for(const name of PM_CRITERIA_NAMES){

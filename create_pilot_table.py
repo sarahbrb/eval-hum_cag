@@ -19,7 +19,6 @@ FIELDS = [
     {"name": "pm_Fractionnement",                 "type": "number", "options": {"precision": 0}},
     {"name": "pm_Technique",                      "type": "number", "options": {"precision": 0}},
     {"name": "pm_Hall. dosimétriques",            "type": "number", "options": {"precision": 0}},
-    {"name": "pm_Terminologie",                   "type": "number", "options": {"precision": 0}},
     {"name": "pm_commentaire",                    "type": "multilineText"},
     {"name": "mr_evaluateur",                     "type": "singleLineText"},
     {"name": "mr_timestamp",                      "type": "singleLineText"},
@@ -34,10 +33,11 @@ FIELDS = [
     {"name": "mr_Toxicités (CTCAE)",              "type": "number", "options": {"precision": 0}},
     {"name": "mr_Bilan de fin",                   "type": "number", "options": {"precision": 0}},
     {"name": "mr_Suites thérapeutiques",          "type": "number", "options": {"precision": 0}},
+    {"name": "mr_Terminologie",                   "type": "number", "options": {"precision": 0}},
+    {"name": "mr_Lisibilité & style",             "type": "number", "options": {"precision": 0}},
     {"name": "mr_Organisation",                   "type": "number", "options": {"precision": 0}},
-    {"name": "mr_Synthèse & Lisibilité",          "type": "number", "options": {"precision": 0}},
+    {"name": "mr_Synthèse",                       "type": "number", "options": {"precision": 0}},
     {"name": "pm_Correspondance profil → CR",     "type": "number", "options": {"precision": 0}},
-    {"name": "mr_Impression globale",             "type": "number", "options": {"precision": 0}},
     {"name": "mr_commentaire",                    "type": "multilineText"},
 ]
 

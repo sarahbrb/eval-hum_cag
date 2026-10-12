@@ -558,7 +558,25 @@ function crStatus(idx){
   return "none";
 }
 
-function showDashboard(){
+
+async function syncSubmitted(){
+  try{
+    const f=evalRole==="MR"?`{mr_evaluateur}="${evalName}"`:evalRole==="PM"?`{pm_evaluateur}="${evalName}"`:
+      `OR({pm_evaluateur}="${evalName}",{mr_evaluateur}="${evalName}")`;
+    const r=await fetch(`${AT_URL}?filterByFormula=${encodeURIComponent(f)}&fields[]=cr_id`,
+      {headers:{"Authorization":`Bearer ${AT_TOKEN}`}});
+    const data=await r.json();
+    if(!data.records) return;
+    let changed=false;
+    for(const rec of data.records){
+      const crId=rec.fields.cr_id; if(!crId) continue;
+      const num=parseInt(crId.replace("CR-",""))-1;
+      if(myCRs.includes(num)&&!submittedCRs[num]){submittedCRs[num]=true;changed=true;}
+    }
+    if(changed){save();showDashboard(true);}
+  }catch(e){}
+}
+function showDashboard(fromSync=false){
   view="dashboard"; save();
   showView("dashboard");
   const total=myCRs.length;
@@ -584,6 +602,7 @@ function showDashboard(){
     card.addEventListener("click",()=>openCR(idx, submitted));
     grid.appendChild(card);
   }
+  if(!fromSync) syncSubmitted();
 }
 
 // ── Eval view ─────────────────────────────────────────────────

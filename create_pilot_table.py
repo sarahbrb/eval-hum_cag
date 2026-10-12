@@ -36,7 +36,7 @@ FIELDS = [
     {"name": "mr_Suites thérapeutiques",          "type": "number", "options": {"precision": 0}},
     {"name": "mr_Organisation",                   "type": "number", "options": {"precision": 0}},
     {"name": "mr_Synthèse & Lisibilité",          "type": "number", "options": {"precision": 0}},
-    {"name": "mr_Correspondance profil → CR",     "type": "number", "options": {"precision": 0}},
+    {"name": "pm_Correspondance profil → CR",     "type": "number", "options": {"precision": 0}},
     {"name": "mr_Impression globale",             "type": "number", "options": {"precision": 0}},
     {"name": "mr_commentaire",                    "type": "multilineText"},
 ]

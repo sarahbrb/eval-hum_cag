@@ -26,6 +26,7 @@ jobs:
       - name: Preparer les fichiers
         env:
           AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+          PILOT_TABLE_ID: ${{ secrets.PILOT_TABLE_ID }}
         run: python3 inject_token.py
 
       - name: Setup Pages

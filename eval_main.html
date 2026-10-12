@@ -923,10 +923,10 @@ async function atSubmit(crId,mrEval,fields){
     const hdrs={"Authorization":`Bearer ${AT_TOKEN}`,"Content-Type":"application/json"};
     if(rec){
       const r=await fetch(`${AT_URL}/${rec.id}`,{method:"PATCH",headers:hdrs,body});
-      const d=await r.json(); if(d.error) console.error("AT PATCH error:",d.error); return !d.error;
+      const d=await r.json(); if(d.error){console.error("AT PATCH error:",JSON.stringify(d.error)," — fields:",JSON.stringify(fields));} return !d.error;
     }else{
       const r=await fetch(AT_URL,{method:"POST",headers:hdrs,body});
-      const d=await r.json(); if(d.error) console.error("AT POST error:",d.error); return !d.error;
+      const d=await r.json(); if(d.error){console.error("AT POST error:",JSON.stringify(d.error)," — fields:",JSON.stringify(fields));} return !d.error;
     }
   }catch(e){console.error("atSubmit exception:",e);return false;}
 }

@@ -228,12 +228,6 @@ function scoreChip(val){
   return `<span class="score ${cls}">${val}</span>`;
 }
 
-function avgScore(fields){
-  const vals=ALL_CRIT.map(c=>fields[fieldKey(c)]).filter(v=>v!=null&&v!==0);
-  if(!vals.length) return null;
-  return (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
-}
-
 function renderTable(ev, dataByEv){
   // Build header: bloc + crit columns + commentaires + moy
   let thead=`<tr>
@@ -241,14 +235,14 @@ function renderTable(ev, dataByEv){
   for(const b of BLOCS){
     thead+=`<th colspan="${b.crit.length}" class="bloc-hdr-cell">${b.name}</th>`;
   }
-  thead+=`<th>Commentaire PM</th><th>Commentaire MR</th><th>Moy.</th></tr>
+  thead+=`<th>Commentaire PM</th><th>Commentaire MR</th></tr>
   <tr><th></th>`;
   for(const b of BLOCS){
     for(const c of b.crit){
       thead+=`<th class="crit-${c.role.toLowerCase()}" title="${c.name}">${c.name.length>14?c.name.slice(0,13)+"…":c.name}</th>`;
     }
   }
-  thead+=`<th></th><th></th><th></th></tr>`;
+  thead+=`<th></th><th></th></tr>`;
 
   let tbody="";
   for(let i=0;i<N_CRS;i++){
@@ -257,7 +251,7 @@ function renderTable(ev, dataByEv){
     if(!f){
       tbody+=`<tr><td>${cr}</td>`;
       for(const _c of ALL_CRIT) tbody+=`<td>${scoreChip(null)}</td>`;
-      tbody+=`<td class="cmt-cell">—</td><td class="cmt-cell">—</td><td>—</td></tr>`;
+      tbody+=`<td class="cmt-cell">—</td><td class="cmt-cell">—</td></tr>`;
       continue;
     }
     tbody+=`<tr><td>${cr}</td>`;
@@ -266,10 +260,8 @@ function renderTable(ev, dataByEv){
     }
     const cmtPm=f.pm_commentaire||"";
     const cmtMr=f.mr_commentaire||"";
-    const avg=avgScore(f);
     tbody+=`<td class="cmt-cell">${cmtPm||"—"}</td>
-      <td class="cmt-cell">${cmtMr||"—"}</td>
-      <td>${avg?`<span class="overall" style="background:#EEF2FF;color:#3730A3">${avg}</span>`:"—"}</td></tr>`;
+      <td class="cmt-cell">${cmtMr||"—"}</td></tr>`;
   }
 
   return `<div class="table-wrap">

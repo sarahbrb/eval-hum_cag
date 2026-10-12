@@ -333,10 +333,11 @@ function krippendorffAlpha(ratingsByCR){
 }
 
 function pctAgree(ratingsByCR){
+  // N/A compte comme réponse : N/A vs score = désaccord, N/A vs N/A = accord
   let ag=0,tot=0;
   for(const rs of ratingsByCR){
     for(let i=0;i<rs.length;i++)for(let j=i+1;j<rs.length;j++){
-      if(rs[i]===rs[j])ag++;tot++;
+      if(rs[i]===rs[j])ag++; tot++;
     }
   }
   return tot?Math.round(ag/tot*100):null;
@@ -364,14 +365,24 @@ function kappaLabel(k){
 function computeIAA(dataByEv){
   return ALL_CRIT.map(c=>{
     const key=fieldKey(c);
-    const byCR=[];
+    const byCR=[];      // pour pctAgree (inclut N/A comme réponse)
+    const byCRscore=[]; // pour Alpha (scores 1-4 uniquement)
     for(let i=0;i<N_CRS;i++){
       const cr=crId(i);
-      const vals=EVALUATORS.map(ev=>dataByEv[ev]?.[cr]?.[key])
-        .filter(v=>v!=null&&v!==0&&v!=="N/A"&&Number.isInteger(v));
-      if(vals.length>=2) byCR.push(vals);
+      // Séparer "a soumis ce CR" de "n'a pas encore soumis"
+      const submitted=EVALUATORS.filter(ev=>!!dataByEv[ev]?.[cr]);
+      if(submitted.length<2) continue;
+      // Valeurs avec N/A explicite pour les évaluatrices ayant soumis
+      const vals=submitted.map(ev=>{
+        const v=dataByEv[ev][cr][key];
+        return (v!=null&&v!==0&&v!=="N/A"&&Number.isInteger(v))?v:"NA";
+      });
+      byCR.push(vals);
+      const scores=vals.filter(v=>v!=="NA");
+      if(scores.length>=2) byCRscore.push(scores);
     }
-    return {crit:c, kappa:krippendorffAlpha(byCR), pct:pctAgree(byCR), n:byCR.length};
+    return {crit:c, kappa:krippendorffAlpha(byCRscore), pct:pctAgree(byCR),
+            n:byCR.length, nScore:byCRscore.length};
   });
 }
 
@@ -382,7 +393,7 @@ function renderIAA(dataByEv){
   for(const b of BLOCS){
     for(const c of b.crit){
       const row=rows.find(r=>r.crit.name===c.name);
-      const kLabel=row.kappa!==null?row.kappa.toFixed(3):"—";
+      const kLabel=row.kappa!==null?`${row.kappa.toFixed(3)} (n=${row.nScore})`:"—";
       const pLabel=row.pct!==null?row.pct+"%":"—";
       const cls=kappaClass(row.kappa);
       const interp=kappaLabel(row.kappa);
@@ -423,7 +434,7 @@ function renderIAA(dataByEv){
     <div class="iaa-note">
       <strong>Note :</strong> L'Alpha de Krippendorff mesure l'accord entre les 3 évaluatrices, corrigé pour le hasard, sur une échelle ordinale (distance intervalle d²=(k−l)²).
       Le % d'accord est la proportion de paires d'évaluatrices ayant attribué la même note.
-      Les notes N/A et CRs non encore soumis sont exclus des paires de coïncidences. Seuils recommandés : α ≥ 0.80 = fiable, α ≥ 0.67 = acceptable. <em>n</em> = CRs avec ≥ 2 notes valides (1–4).
+      Le % accord inclut les N/A comme réponse (N/A vs score = désaccord). L'Alpha est calculé sur les scores 1–4 uniquement (distance ordinale). CRs non encore soumis sont exclus. Seuils : α ≥ 0.80 fiable, α ≥ 0.67 acceptable.
     </div>`;
 }
 

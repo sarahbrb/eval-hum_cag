@@ -10,7 +10,7 @@
   --bg:#F7F8FA;--surface:#fff;--border:#E2E5EA;
   --fg:#1A1D23;--fg2:#6B7280;
   --pm:#2563EB;--pm-bg:#EFF6FF;
-  --mr:#059669;--mr-bg:#ECFDF5;
+  --mr:#BE185D;--mr-bg:#FCE7F3;
   --s1:#DC2626;--s2:#EA580C;--s3:#16A34A;--s4:#15803D;
   --na:#9CA3AF;--radius:10px;
 }
@@ -222,7 +222,7 @@ function renderProgress(idx){
 }
 
 function scoreChip(val){
-  if(val===null||val===undefined) return `<span class="smissing">—</span>`;
+  if(val===null||val===undefined) return ``;
   if(val===0||val==="N/A") return `<span class="score sna">N/A</span>`;
   const cls=["","s1","s2","s3","s4"][val]||"";
   return `<span class="score ${cls}">${val}</span>`;
@@ -251,7 +251,7 @@ function renderTable(ev, dataByEv){
     if(!f){
       tbody+=`<tr><td>${cr}</td>`;
       for(const _c of ALL_CRIT) tbody+=`<td>${scoreChip(null)}</td>`;
-      tbody+=`<td class="cmt-cell">—</td><td class="cmt-cell">—</td></tr>`;
+      tbody+=`<td class="cmt-cell"></td><td class="cmt-cell"></td></tr>`;
       continue;
     }
     tbody+=`<tr><td>${cr}</td>`;
@@ -260,8 +260,8 @@ function renderTable(ev, dataByEv){
     }
     const cmtPm=f.pm_commentaire||"";
     const cmtMr=f.mr_commentaire||"";
-    tbody+=`<td class="cmt-cell">${cmtPm||"—"}</td>
-      <td class="cmt-cell">${cmtMr||"—"}</td></tr>`;
+    tbody+=`<td class="cmt-cell">${cmtPm||""}</td>
+      <td class="cmt-cell">${cmtMr||""}</td></tr>`;
   }
 
   return `<div class="table-wrap">

@@ -141,6 +141,7 @@ html,body{height:100%;font-family:"Inter",system-ui,sans-serif;font-size:14px;ba
 .role-chip.mr{background:var(--mr-bg);color:var(--mr-text)}
 .lock-badge{font-size:.7rem;color:var(--fg3);background:#F1F5F9;border:1px solid var(--border);border-radius:4px;padding:1px 6px}
 .crit-q{font-size:.8125rem;color:var(--fg2);line-height:1.5}
+.crit-hint{font-size:.75rem;color:#7C6F00;background:#FFFBEB;border:1px solid #F5E061;border-radius:6px;padding:5px 9px;margin-top:4px;line-height:1.45}
 .rrow{display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0}
 .rb{width:44px;height:36px;border:1.5px solid var(--border);border-radius:6px;background:#fff;font-family:inherit;font-size:.875rem;font-weight:600;cursor:pointer;transition:all .12s;color:var(--fg2)}
 .rb:hover:not(:disabled){border-color:var(--navy);color:var(--navy)}
@@ -401,6 +402,7 @@ const CRITERIA = [
   {name:"Synthèse & Lisibilité",role:"MR",scale:"1-4",q:"Le texte est-il fluide, concis et adapté au style médical ?",
    notes:{"1":"Texte illisible ou clairement non médical.","2":"Texte compréhensible mais avec des maladresses stylistiques.","3":"Texte globalement bien rédigé avec quelques légères imperfections.","4":"Texte naturel, fluide et parfaitement adapté."}},
   {name:"Correspondance profil → CR",role:"MR",scale:"1-4/NA",q:"Le CR est-il cohérent avec le profil patient fourni ?",
+   hint:"Le profil peut être mentionné de façon reformulée (et non repris mot pour mot) : cela est considéré comme correct.",
    notes:{"1":"Contradictions majeures entre le profil et le CR.","2":"Contradictions partielles importantes.","3":"Globalement cohérent avec quelques divergences mineures.","4":"Parfaite cohérence entre le profil et le CR.","N/A":"Impossible à évaluer."}},
   {name:"Impression globale",role:"MR",scale:"1-4",q:"Quelle est votre impression globale ? Ce CR est-il acceptable pour une utilisation clinique ?",
    notes:{"1":"CR inacceptable : erreurs majeures.","2":"CR nécessitant des corrections importantes.","3":"CR globalement acceptable avec quelques réserves.","4":"CR parfaitement acceptable et prêt pour une utilisation clinique."}},
@@ -667,6 +669,7 @@ function renderRight(){
               ${isLocked?`<span class="lock-badge">🔒 réservé ${c.role}</span>`:""}
             </div>
             <div class="crit-q">${c.q}</div>
+            ${c.hint?`<div class="crit-hint">ℹ️ ${c.hint}</div>`:""}
           </div>
           <div class="rrow">
             ${vals.map(v=>`<button class="rb${val===v?" on":""}" data-v="${v}" ${isLocked||readOnlyMode?"disabled":""} onclick='rate(${JSON.stringify(c.name)},"${v}")'>${v}</button>`).join("")}

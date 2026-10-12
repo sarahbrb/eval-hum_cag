@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Résultats Pilote — CAG</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#F7F8FA;--surface:#fff;--border:#E2E5EA;
+  --fg:#1A1D23;--fg2:#6B7280;
+  --pm:#2563EB;--pm-bg:#EFF6FF;
+  --mr:#059669;--mr-bg:#ECFDF5;
+  --s1:#DC2626;--s2:#EA580C;--s3:#16A34A;--s4:#15803D;
+  --na:#9CA3AF;--radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--fg);font-size:.875rem;min-height:100vh}
+
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.hdr-title{font-weight:700;font-size:1rem}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.7rem;font-weight:600;background:#7C3AED;color:#fff;margin-left:8px;vertical-align:middle}
+.hdr-right{display:flex;align-items:center;gap:12px;color:var(--fg2);font-size:.8rem}
+button{cursor:pointer;border:none;border-radius:6px;padding:6px 14px;font-size:.8rem;font-weight:500;transition:opacity .15s}
+.btn-refresh{background:var(--fg);color:#fff}
+.btn-refresh:hover{opacity:.85}
+
+main{max-width:1400px;margin:0 auto;padding:24px 20px}
+
+/* Progress cards */
+.progress-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:28px}
+.prog-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px}
+.prog-name{font-weight:600;font-size:.95rem;margin-bottom:10px}
+.prog-bar-wrap{background:#E5E7EB;border-radius:99px;height:8px;margin-bottom:8px;overflow:hidden}
+.prog-bar{height:100%;border-radius:99px;background:#4F46E5;transition:width .4s}
+.prog-label{font-size:.8rem;color:var(--fg2)}
+.prog-crs{display:flex;gap:5px;margin-top:10px;flex-wrap:wrap}
+.prog-cr{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:600;border:1px solid var(--border);background:var(--bg);color:var(--fg2)}
+.prog-cr.done{background:#D1FAE5;border-color:#6EE7B7;color:#065F46}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:2px solid var(--border);padding-bottom:0}
+.tab{padding:8px 18px;font-weight:500;color:var(--fg2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s;border-radius:4px 4px 0 0;background:none}
+.tab.active{color:var(--pm);border-bottom-color:var(--pm);font-weight:600}
+.tab:hover:not(.active){color:var(--fg)}
+
+/* Table */
+.section-title{font-weight:600;font-size:.9rem;margin-bottom:12px;color:var(--fg)}
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:600px}
+thead th{background:#F3F4F6;font-weight:600;font-size:.75rem;padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0}
+thead th:first-child{position:sticky;left:0;z-index:2;background:#F3F4F6}
+tbody td{padding:8px 10px;border-bottom:1px solid #F0F1F4;vertical-align:middle;font-size:.8rem;white-space:nowrap}
+tbody td:first-child{font-weight:600;position:sticky;left:0;background:var(--surface);z-index:1;border-right:1px solid var(--border)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#FAFAFA}
+tbody tr:hover td:first-child{background:#F7F8FA}
+
+/* Bloc header */
+.bloc-hdr{background:#EEF2FF;font-size:.7rem;font-weight:600;color:#4338CA;text-align:center;padding:4px 6px;border-bottom:1px solid #C7D2FE}
+.bloc-hdr-cell{background:#EEF2FF;font-size:.7rem;font-weight:700;color:#4338CA;padding:6px 10px;border-bottom:1px solid #C7D2FE;white-space:normal;min-width:90px}
+thead .crit-pm{color:var(--pm)}
+thead .crit-mr{color:var(--mr)}
+
+/* Score chips */
+.score{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;font-weight:700;font-size:.85rem}
+.s1{background:#FEE2E2;color:var(--s1)}
+.s2{background:#FFEDD5;color:var(--s2)}
+.s3{background:#DCFCE7;color:var(--s3)}
+.s4{background:#BBF7D0;color:var(--s4)}
+.sna{background:#F3F4F6;color:var(--na);font-size:.7rem;font-weight:500;width:32px}
+.smissing{color:#D1D5DB;font-size:1rem}
+
+/* Comments */
+.cmt-cell{max-width:180px;white-space:normal;font-size:.75rem;color:var(--fg2);line-height:1.4}
+
+/* Overall score badge */
+.overall{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:600}
+
+/* Loading / error */
+#loading{text-align:center;padding:60px;color:var(--fg2)}
+.err-box{background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:.85rem}
+.refresh-info{font-size:.75rem;color:var(--fg2)}
+
+@media(max-width:640px){
+  header{padding:10px 14px}
+  main{padding:16px 12px}
+  .progress-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <span class="hdr-title">Résultats — Évaluation CAG</span>
+    <span class="badge">PILOTE</span>
+  </div>
+  <div class="hdr-right">
+    <span class="refresh-info" id="last-refresh"></span>
+    <button class="btn-refresh" onclick="loadAll()">↻ Rafraîchir</button>
+  </div>
+</header>
+
+<main>
+  <div id="loading">Chargement des résultats…</div>
+  <div id="content" hidden>
+
+    <!-- Progression -->
+    <p class="section-title">Progression</p>
+    <div class="progress-grid" id="prog-grid"></div>
+
+    <!-- Scores détaillés -->
+    <p class="section-title">Scores détaillés</p>
+    <div class="tabs" id="tabs"></div>
+    <div id="tab-content"></div>
+
+  </div>
+</main>
+
+<script>
+const AT_TOKEN  = "%%AT_TOKEN%%";
+const AT_BASE   = "appCpDq5UMLxZidBX";
+const AT_TABLE  = "%%PILOT_TABLE_ID%%";
+const AT_URL    = `https://api.airtable.com/v0/${AT_BASE}/${AT_TABLE}`;
+
+const EVALUATORS = ["Diandra","Markarit","Lisa"];
+const N_CRS = 5;
+
+// Critères avec rôle et préfixe Airtable
+const BLOCS = [
+  {name:"1. Réalisme dosimétrique", crit:[
+    {name:"Dose totale",                role:"PM"},
+    {name:"Fractionnement",             role:"PM"},
+    {name:"Technique",                  role:"PM"},
+  ]},
+  {name:"2. Cohérence diag. & traitement", crit:[
+    {name:"Volumes cibles",             role:"MR"},
+    {name:"Chirurgie",                  role:"MR"},
+    {name:"Hormonothérapie",            role:"MR"},
+  ]},
+  {name:"3. Intégrité", crit:[
+    {name:"Hall. dosimétriques",        role:"PM"},
+    {name:"Hall. cliniques",            role:"MR"},
+    {name:"Contradictions internes",    role:"MR"},
+  ]},
+  {name:"4. Complétude", crit:[
+    {name:"Indication / diagnostic",          role:"MR"},
+    {name:"Contexte thérapeutique",           role:"MR"},
+    {name:"Caractéristiques du traitement",   role:"MR"},
+    {name:"Toxicités (CTCAE)",                role:"MR"},
+    {name:"Bilan de fin",                     role:"MR"},
+    {name:"Suites thérapeutiques",            role:"MR"},
+  ]},
+  {name:"5. Rédaction", crit:[
+    {name:"Terminologie",               role:"PM"},
+    {name:"Organisation",               role:"MR"},
+    {name:"Synthèse & Lisibilité",      role:"MR"},
+  ]},
+  {name:"6. Cohérence", crit:[
+    {name:"Correspondance profil → CR", role:"PM"},
+  ]},
+  {name:"7. Impression globale", crit:[
+    {name:"Impression globale",         role:"MR"},
+  ]},
+];
+
+const ALL_CRIT = BLOCS.flatMap(b=>b.crit);
+
+function crId(idx){ return `CR-${String(idx+1).padStart(2,"0")}`; }
+function fieldKey(c){ return (c.role==="PM"?"pm_":"mr_")+c.name; }
+
+// ── Fetch all records ─────────────────────────────────────────
+let allRecords = [];
+
+async function fetchAll(){
+  let records=[], offset=null;
+  do{
+    const url=AT_URL+(offset?`?offset=${offset}`:"");
+    const r=await fetch(url,{headers:{"Authorization":`Bearer ${AT_TOKEN}`}});
+    const d=await r.json();
+    if(d.error) throw new Error(d.error.message);
+    records.push(...(d.records||[]));
+    offset=d.offset||null;
+  }while(offset);
+  return records;
+}
+
+// Build index: { evalName → { cr_id → fields } }
+function buildIndex(records){
+  const idx={};
+  for(const ev of EVALUATORS) idx[ev]={};
+  for(const rec of records){
+    const f=rec.fields;
+    const ev=f.pm_evaluateur||f.mr_evaluateur;
+    const cr=f.cr_id;
+    if(!ev||!cr) continue;
+    if(idx[ev]) idx[ev][cr]=f;
+  }
+  return idx;
+}
+
+// ── Render ────────────────────────────────────────────────────
+function renderProgress(idx){
+  const grid=document.getElementById("prog-grid");
+  grid.innerHTML="";
+  for(const ev of EVALUATORS){
+    const submitted=Object.keys(idx[ev]).length;
+    const pct=Math.round(submitted/N_CRS*100);
+    const crs=Array.from({length:N_CRS},(_,i)=>i).map(i=>{
+      const done=!!idx[ev][crId(i)];
+      return `<div class="prog-cr${done?" done":""}" title="${crId(i)}">${i+1}</div>`;
+    }).join("");
+    grid.innerHTML+=`
+      <div class="prog-card">
+        <div class="prog-name">${ev}</div>
+        <div class="prog-bar-wrap"><div class="prog-bar" style="width:${pct}%"></div></div>
+        <div class="prog-label">${submitted}/${N_CRS} CRs soumis</div>
+        <div class="prog-crs">${crs}</div>
+      </div>`;
+  }
+}
+
+function scoreChip(val){
+  if(val===null||val===undefined) return `<span class="smissing">—</span>`;
+  if(val===0||val==="N/A") return `<span class="score sna">N/A</span>`;
+  const cls=["","s1","s2","s3","s4"][val]||"";
+  return `<span class="score ${cls}">${val}</span>`;
+}
+
+function avgScore(fields){
+  const vals=ALL_CRIT.map(c=>fields[fieldKey(c)]).filter(v=>v!=null&&v!==0);
+  if(!vals.length) return null;
+  return (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+}
+
+function renderTable(ev, dataByEv){
+  // Build header: bloc + crit columns + commentaires + moy
+  let thead=`<tr>
+    <th>CR</th>`;
+  for(const b of BLOCS){
+    thead+=`<th colspan="${b.crit.length}" class="bloc-hdr-cell">${b.name}</th>`;
+  }
+  thead+=`<th>Commentaire PM</th><th>Commentaire MR</th><th>Moy.</th></tr>
+  <tr><th></th>`;
+  for(const b of BLOCS){
+    for(const c of b.crit){
+      thead+=`<th class="crit-${c.role.toLowerCase()}" title="${c.name}">${c.name.length>14?c.name.slice(0,13)+"…":c.name}</th>`;
+    }
+  }
+  thead+=`<th></th><th></th><th></th></tr>`;
+
+  let tbody="";
+  for(let i=0;i<N_CRS;i++){
+    const cr=crId(i);
+    const f=dataByEv[ev]?.[cr];
+    if(!f){
+      tbody+=`<tr><td>${cr}</td>`;
+      for(const _c of ALL_CRIT) tbody+=`<td>${scoreChip(null)}</td>`;
+      tbody+=`<td class="cmt-cell">—</td><td class="cmt-cell">—</td><td>—</td></tr>`;
+      continue;
+    }
+    tbody+=`<tr><td>${cr}</td>`;
+    for(const c of ALL_CRIT){
+      tbody+=`<td>${scoreChip(f[fieldKey(c)])}</td>`;
+    }
+    const cmtPm=f.pm_commentaire||"";
+    const cmtMr=f.mr_commentaire||"";
+    const avg=avgScore(f);
+    tbody+=`<td class="cmt-cell">${cmtPm||"—"}</td>
+      <td class="cmt-cell">${cmtMr||"—"}</td>
+      <td>${avg?`<span class="overall" style="background:#EEF2FF;color:#3730A3">${avg}</span>`:"—"}</td></tr>`;
+  }
+
+  return `<div class="table-wrap">
+    <table><thead>${thead}</thead><tbody>${tbody}</tbody></table>
+  </div>`;
+}
+
+let activeTab=EVALUATORS[0];
+
+function renderTabs(dataByEv){
+  const tabsEl=document.getElementById("tabs");
+  tabsEl.innerHTML=EVALUATORS.map(ev=>{
+    const n=Object.keys(dataByEv[ev]).length;
+    return `<div class="tab${ev===activeTab?" active":""}" onclick="switchTab('${ev}')">${ev} <span style="font-size:.7rem;opacity:.7">(${n}/${N_CRS})</span></div>`;
+  }).join("");
+  document.getElementById("tab-content").innerHTML=renderTable(activeTab,dataByEv);
+}
+
+function switchTab(ev){
+  activeTab=ev;
+  renderTabs(window._dataByEv);
+}
+
+async function loadAll(){
+  document.getElementById("loading").hidden=false;
+  document.getElementById("content").hidden=true;
+  try{
+    allRecords=await fetchAll();
+    const dataByEv=buildIndex(allRecords);
+    window._dataByEv=dataByEv;
+    renderProgress(dataByEv);
+    renderTabs(dataByEv);
+    document.getElementById("last-refresh").textContent=
+      "Mis à jour : "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+    document.getElementById("loading").hidden=true;
+    document.getElementById("content").hidden=false;
+  }catch(e){
+    document.getElementById("loading").innerHTML=
+      `<div class="err-box">Erreur de chargement : ${e.message}<br>Vérifiez que votre token Airtable est valide.</div>`;
+  }
+}
+
+loadAll();
+</script>
+</body>
+</html>

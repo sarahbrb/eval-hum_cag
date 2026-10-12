@@ -17,12 +17,13 @@ print("Token injecté dans eval_main.html")
 
 # Pilote
 if pilot_table:
-    with open("pilot/index.html", "r", encoding="utf-8") as f:
-        content = f.read()
-    content = content.replace("%%AT_TOKEN%%", token)
-    content = content.replace("%%PILOT_TABLE_ID%%", pilot_table)
-    with open("pilot/index.html", "w", encoding="utf-8") as f:
-        f.write(content)
-    print(f"Token + PILOT_TABLE_ID injectés dans pilot/index.html")
+    for fname in ["pilot/index.html", "pilot/resultats.html"]:
+        with open(fname, "r", encoding="utf-8") as f:
+            content = f.read()
+        content = content.replace("%%AT_TOKEN%%", token)
+        content = content.replace("%%PILOT_TABLE_ID%%", pilot_table)
+        with open(fname, "w", encoding="utf-8") as f:
+            f.write(content)
+        print(f"Token + PILOT_TABLE_ID injectés dans {fname}")
 else:
-    print("PILOT_TABLE_ID absent — pilot/eval_main.html ignoré", file=sys.stderr)
+    print("PILOT_TABLE_ID absent — fichiers pilote ignorés", file=sys.stderr)

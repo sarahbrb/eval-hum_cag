@@ -9,12 +9,13 @@ if not token:
     sys.exit(1)
 
 # ── Évaluation principale ──────────────────────────────────────────
-with open("eval_main/index.html", "r", encoding="utf-8") as f:
-    content = f.read()
-content = content.replace("%%AT_TOKEN%%", token)
-with open("eval_main/index.html", "w", encoding="utf-8") as f:
-    f.write(content)
-print("Token injecté dans eval_main/index.html")
+for fname in ["eval_main/index.html", "eval_main/resultats.html"]:
+    with open(fname, "r", encoding="utf-8") as f:
+        content = f.read()
+    content = content.replace("%%AT_TOKEN%%", token)
+    with open(fname, "w", encoding="utf-8") as f:
+        f.write(content)
+    print(f"Token injecté dans {fname}")
 
 # ── Phase pilote labo (Diandra / Markarit / Lisa) ─────────────────
 if pilot_table:

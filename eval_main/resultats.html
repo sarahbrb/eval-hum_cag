@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Résultats Éval Principale — CAG</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#F7F8FA;--surface:#fff;--border:#E2E5EA;
+  --fg:#1A1D23;--fg2:#6B7280;
+  --pm:#2563EB;--pm-bg:#EFF6FF;
+  --mr:#BE185D;--mr-bg:#FCE7F3;
+  --s1:#DC2626;--s2:#EA580C;--s3:#16A34A;--s4:#15803D;
+  --na:#9CA3AF;--radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--fg);font-size:.875rem;min-height:100vh}
+
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.hdr-title{font-weight:700;font-size:1rem}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.7rem;font-weight:600;background:#0D9488;color:#fff;margin-left:8px;vertical-align:middle}
+.hdr-right{display:flex;align-items:center;gap:12px;color:var(--fg2);font-size:.8rem}
+button{cursor:pointer;border:none;border-radius:6px;padding:6px 14px;font-size:.8rem;font-weight:500;transition:opacity .15s}
+.btn-refresh{background:var(--fg);color:#fff}
+.btn-refresh:hover{opacity:.85}
+
+main{max-width:1400px;margin:0 auto;padding:24px 20px}
+
+/* Progress cards */
+.progress-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:28px}
+.prog-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px}
+.prog-name{font-weight:600;font-size:.95rem;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.role-chip{font-size:.65rem;font-weight:600;padding:1px 6px;border-radius:99px}
+.prog-bar-wrap{background:#E5E7EB;border-radius:99px;height:8px;margin-bottom:8px;overflow:hidden}
+.prog-bar{height:100%;border-radius:99px;background:#4F46E5;transition:width .4s}
+.prog-label{font-size:.8rem;color:var(--fg2)}
+.prog-range{font-size:.72rem;color:var(--fg2);margin-top:6px;font-style:italic}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:2px solid var(--border);padding-bottom:0;flex-wrap:wrap}
+.tab{padding:8px 18px;font-weight:500;color:var(--fg2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s;border-radius:4px 4px 0 0;background:none}
+.tab.active{color:var(--pm);border-bottom-color:var(--pm);font-weight:600}
+.tab:hover:not(.active){color:var(--fg)}
+
+/* Table */
+.section-title{font-weight:600;font-size:.9rem;margin-bottom:12px;color:var(--fg)}
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:600px}
+thead th{background:#F3F4F6;font-weight:600;font-size:.75rem;padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0}
+thead th:first-child{position:sticky;left:0;z-index:2;background:#F3F4F6}
+tbody td{padding:8px 10px;border-bottom:1px solid #F0F1F4;vertical-align:middle;font-size:.8rem;white-space:nowrap}
+tbody td:first-child{font-weight:600;position:sticky;left:0;background:var(--surface);z-index:1;border-right:1px solid var(--border)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#FAFAFA}
+tbody tr:hover td:first-child{background:#F7F8FA}
+.iaa-row td{background:#FFFBEB!important;font-style:italic}
+
+/* Bloc header */
+.bloc-hdr-cell{background:#EEF2FF;font-size:.7rem;font-weight:700;color:#4338CA;padding:6px 10px;border-bottom:1px solid #C7D2FE;white-space:normal;min-width:90px}
+thead .crit-pm{color:var(--pm)}
+thead .crit-mr{color:var(--mr)}
+
+/* Score chips */
+.score{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;font-weight:700;font-size:.85rem}
+.s1{background:#FEE2E2;color:var(--s1)}
+.s2{background:#FFEDD5;color:var(--s2)}
+.s3{background:#DCFCE7;color:var(--s3)}
+.s4{background:#BBF7D0;color:var(--s4)}
+.sna{background:#F3F4F6;color:var(--na);font-size:.7rem;font-weight:500;width:32px}
+.smissing{color:#D1D5DB;font-size:1rem}
+
+/* Comments */
+.cmt-cell{max-width:180px;white-space:normal;font-size:.75rem;color:var(--fg2);line-height:1.4}
+
+/* Loading / error */
+#loading{text-align:center;padding:60px;color:var(--fg2)}
+.err-box{background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:.85rem}
+.refresh-info{font-size:.75rem;color:var(--fg2)}
+
+/* IAA table */
+.iaa-legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;font-size:.75rem}
+.iaa-leg-item{display:flex;align-items:center;gap:5px}
+.iaa-dot{width:10px;height:10px;border-radius:50%}
+.kappa-chip{display:inline-block;padding:2px 9px;border-radius:99px;font-weight:600;font-size:.8rem}
+.k-neg{background:#FEE2E2;color:#991B1B}
+.k-slight{background:#FEF3C7;color:#92400E}
+.k-fair{background:#FED7AA;color:#9A3412}
+.k-mod{background:#E0F2FE;color:#075985}
+.k-sub{background:#D1FAE5;color:#065F46}
+.k-perf{background:#BBF7D0;color:#14532D}
+.k-na{background:#F3F4F6;color:#6B7280}
+.iaa-note{font-size:.75rem;color:var(--fg2);margin-top:14px;padding:10px 14px;background:#F8FAFC;border-radius:8px;border:1px solid var(--border);line-height:1.6}
+
+@media(max-width:640px){
+  header{padding:10px 14px}
+  main{padding:16px 12px}
+  .progress-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <span class="hdr-title">Résultats · Évaluation CAG</span>
+    <span class="badge">ÉVAL PRINCIPALE</span>
+  </div>
+  <div class="hdr-right">
+    <span class="refresh-info" id="last-refresh"></span>
+    <button class="btn-refresh" onclick="loadAll()">↻ Rafraîchir</button>
+  </div>
+</header>
+
+<main>
+  <div id="loading">Chargement des résultats…</div>
+  <div id="content" hidden>
+    <p class="section-title">Progression</p>
+    <div class="progress-grid" id="prog-grid"></div>
+
+    <p class="section-title">Scores détaillés</p>
+    <div class="tabs" id="tabs"></div>
+    <div id="tab-content"></div>
+  </div>
+</main>
+
+<script>
+const AT_TOKEN = "%%AT_TOKEN%%";
+const AT_BASE  = "appCpDq5UMLxZidBX";
+const AT_TABLE = "tbl0Qd1ZYN7OiwXj7";
+const AT_URL   = `https://api.airtable.com/v0/${AT_BASE}/${AT_TABLE}`;
+
+const N_CRS = 75;
+
+function r(a,b){const arr=[];for(let i=a;i<b;i++)arr.push(i);return arr;}
+
+// Plages par évaluateur (indices 0-based)
+const ASSIGNMENTS = {
+  "Sophie":              {role:"PM", crs:[...r(0,16),...r(32,42)]},   // CR-01..16 + CR-33..42 = 26
+  "Estelle":             {role:"PM", crs:r(16,42)},                    // CR-17..42 = 26
+  "Veronica":            {role:"PM", crs:r(32,58)},                    // CR-33..58 = 26
+  "Christophe":          {role:"PM", crs:[...r(32,42),...r(58,75)]},  // CR-33..42 + CR-59..75 = 27
+  "Dr Odile BRUN":       {role:"MR", crs:r(0,45)},                    // CR-01..45 = 45
+  "Dr Gautier Glemarec": {role:"MR", crs:r(30,75)},                   // CR-31..75 = 45
+};
+
+const EVALUATORS = Object.keys(ASSIGNMENTS);
+const EVALUATOR_ROLES = Object.fromEntries(EVALUATORS.map(e=>[e,ASSIGNMENTS[e].role]));
+
+// IAA overlap indices
+const OVERLAP_PM = new Set(r(32,42));  // CR-33..42 (10 CRs) — tous les 4 PMs
+const OVERLAP_MR = new Set(r(30,45));  // CR-31..45 (15 CRs) — les 2 MRs
+
+const BLOCS = [
+  {name:"Réalisme dosimétrique", crit:[
+    {name:"Dose totale",                          role:"PM"},
+    {name:"Fractionnement",                       role:"PM"},
+    {name:"Technique",                            role:"PM"},
+  ]},
+  {name:"Cohérence diagnostique & traitement", crit:[
+    {name:"Volumes cibles",                       role:"MR"},
+    {name:"Chirurgie",                            role:"MR"},
+    {name:"Hormonothérapie",                      role:"MR"},
+  ]},
+  {name:"Intégrité", crit:[
+    {name:"Hallucinations dosimétriques", key:"Hall. dosimétriques", role:"PM"},
+    {name:"Hallucinations cliniques",     key:"Hall. cliniques",     role:"MR"},
+    {name:"Contradictions internes",                                  role:"MR"},
+  ]},
+  {name:"Complétude", crit:[
+    {name:"Indication / diagnostic",              role:"MR"},
+    {name:"Contexte thérapeutique",               role:"MR"},
+    {name:"Caractéristiques du traitement",       role:"MR"},
+    {name:"Toxicités (CTCAE)",                    role:"MR"},
+    {name:"Bilan de fin",                         role:"MR"},
+    {name:"Suites thérapeutiques",                role:"MR"},
+  ]},
+  {name:"Rédaction", crit:[
+    {name:"Terminologie",                         role:"PM"},
+    {name:"Organisation",                         role:"MR"},
+    {name:"Clarté & Lisibilité", key:"Synthèse & Lisibilité", role:"MR"},
+  ]},
+  {name:"Cohérence", crit:[
+    {name:"Correspondance profil → CR",           role:"PM"},
+  ]},
+  {name:"Impression globale", crit:[
+    {name:"Impression globale",                   role:"MR"},
+  ]},
+];
+
+const ALL_CRIT = BLOCS.flatMap(b=>b.crit);
+
+function crId(idx){ return `CR-${String(idx+1).padStart(2,"0")}`; }
+function fieldKey(c){ return (c.role==="PM"?"pm_":"mr_")+(c.key||c.name); }
+
+// ── Fetch all records ─────────────────────────────────────────
+let allRecords = [];
+
+async function fetchAll(){
+  let records=[], offset=null;
+  do{
+    const url=AT_URL+(offset?`?offset=${offset}`:"");
+    const res=await fetch(url,{headers:{"Authorization":`Bearer ${AT_TOKEN}`}});
+    const d=await res.json();
+    if(d.error) throw new Error(d.error.message);
+    records.push(...(d.records||[]));
+    offset=d.offset||null;
+  }while(offset);
+  return records;
+}
+
+// Build index: { evalName → { cr_id → fields } }
+function buildIndex(records){
+  const idx={};
+  for(const ev of EVALUATORS) idx[ev]={};
+  for(const rec of records){
+    const f=rec.fields;
+    const ev=f.pm_evaluateur||f.mr_evaluateur;
+    const cr=f.cr_id;
+    if(!ev||!cr) continue;
+    if(idx[ev]) idx[ev][cr]=f;
+  }
+  return idx;
+}
+
+// ── Render ────────────────────────────────────────────────────
+function renderProgress(dataByEv){
+  const grid=document.getElementById("prog-grid");
+  grid.innerHTML="";
+  for(const ev of EVALUATORS){
+    const asgn=ASSIGNMENTS[ev];
+    const total=asgn.crs.length;
+    const submitted=asgn.crs.filter(i=>!!dataByEv[ev][crId(i)]).length;
+    const pct=Math.round(submitted/total*100);
+    const isPM=asgn.role==="PM";
+    const chipStyle=`background:${isPM?"#EFF6FF":"#FCE7F3"};color:${isPM?"#2563EB":"#BE185D"}`;
+    const first=asgn.crs[0], last=asgn.crs[asgn.crs.length-1];
+    const rangeLabel=asgn.crs.length<=20
+      ? `CR-${String(first+1).padStart(2,"0")}..${String(last+1).padStart(2,"0")}`
+      : `${asgn.crs.length} CRs assignés`;
+    grid.innerHTML+=`
+      <div class="prog-card">
+        <div class="prog-name">${ev}
+          <span class="role-chip" style="${chipStyle}">${asgn.role}</span>
+        </div>
+        <div class="prog-bar-wrap"><div class="prog-bar" style="width:${pct}%"></div></div>
+        <div class="prog-label">${submitted} / ${total} CRs soumis (${pct}%)</div>
+        <div class="prog-range">${rangeLabel}</div>
+      </div>`;
+  }
+}
+
+function scoreChip(val){
+  if(val===null||val===undefined) return `<span class="smissing">·</span>`;
+  if(val===0||val==="N/A") return `<span class="score sna">N/A</span>`;
+  const cls=["","s1","s2","s3","s4"][val]||"";
+  return `<span class="score ${cls}">${val}</span>`;
+}
+
+function renderTable(ev, dataByEv){
+  const evRole=EVALUATOR_ROLES[ev];
+  const visBlocs=BLOCS.map(b=>({...b,crit:b.crit.filter(c=>c.role===evRole)})).filter(b=>b.crit.length);
+  const visCrit=visBlocs.flatMap(b=>b.crit);
+  const cmtField=evRole==="PM"?"pm_commentaire":"mr_commentaire";
+  const cmtLabel=evRole==="PM"?"Commentaire PM":"Commentaire MR";
+
+  let thead=`<tr><th>CR</th>`;
+  for(const b of visBlocs) thead+=`<th colspan="${b.crit.length}" class="bloc-hdr-cell">${b.name}</th>`;
+  thead+=`<th>${cmtLabel}</th></tr><tr><th></th>`;
+  for(const c of visCrit)
+    thead+=`<th class="crit-${c.role.toLowerCase()}" title="${c.name}">${c.name.length>14?c.name.slice(0,13)+"…":c.name}</th>`;
+  thead+=`<th></th></tr>`;
+
+  const crIndices=ASSIGNMENTS[ev].crs;
+  let tbody="";
+  for(const i of crIndices){
+    const cr=crId(i);
+    const f=dataByEv[ev]?.[cr];
+    const isIAApm=OVERLAP_PM.has(i)&&evRole==="PM";
+    const isIAAmr=OVERLAP_MR.has(i)&&evRole==="MR";
+    const iaaClass=isIAApm||isIAAmr?" iaa-row":"";
+    const iaaTag=(isIAApm||isIAAmr)
+      ? ` <span style="font-size:.6rem;padding:1px 5px;border-radius:4px;background:#FDE68A;color:#92400E;margin-left:3px">IAA</span>` : "";
+    tbody+=`<tr class="${iaaClass}"><td>${cr}${iaaTag}</td>`;
+    for(const c of visCrit) tbody+=`<td>${scoreChip(f?f[fieldKey(c)]:null)}</td>`;
+    tbody+=`<td class="cmt-cell">${f?.(f[cmtField]||"")}</td></tr>`;
+  }
+
+  return `<div class="table-wrap"><table><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
+}
+
+let activeTab=EVALUATORS[0];
+
+function renderTabs(dataByEv){
+  const tabsEl=document.getElementById("tabs");
+  const iaaActive=activeTab==="IAA";
+  tabsEl.innerHTML=EVALUATORS.map(ev=>{
+    const asgn=ASSIGNMENTS[ev];
+    const n=asgn.crs.filter(i=>!!dataByEv[ev][crId(i)]).length;
+    const total=asgn.crs.length;
+    const roleColor=asgn.role==="PM"?"#2563EB":"#BE185D";
+    return `<div class="tab${ev===activeTab?" active":""}" onclick="switchTab('${ev.replace(/'/g,"\\'")}')">${ev} <span style="font-size:.65rem;font-weight:700;color:${roleColor}">${asgn.role}</span> <span style="font-size:.7rem;opacity:.7">(${n}/${total})</span></div>`;
+  }).join("")+`<div class="tab${iaaActive?" active":""}" onclick="switchTab('IAA')" style="margin-left:auto">📊 Accord inter-évaluateurs</div>`;
+  document.getElementById("tab-content").innerHTML=activeTab==="IAA"?renderIAA(dataByEv):renderTable(activeTab,dataByEv);
+}
+
+function switchTab(ev){
+  activeTab=ev;
+  renderTabs(window._dataByEv);
+}
+
+// ── IAA ────────────────────────────────────────────────────────
+function krippendorffAlpha(ratingsByCR){
+  const cats=[1,2,3,4];
+  const units=ratingsByCR.filter(rs=>rs.length>=2);
+  if(!units.length) return null;
+  const o={};
+  for(const k of cats){o[k]={};for(const l of cats)o[k][l]=0;}
+  for(const rs of units){
+    const rr=rs.length;
+    for(let g=0;g<rr;g++)for(let h=0;h<rr;h++){
+      if(g===h) continue;
+      const k=rs[g],l=rs[h];
+      if(cats.includes(k)&&cats.includes(l)) o[k][l]+=1/(rr-1);
+    }
+  }
+  const nk={};for(const k of cats) nk[k]=cats.reduce((s,l)=>s+o[k][l],0);
+  const n=cats.reduce((s,k)=>s+nk[k],0);
+  if(n<2) return null;
+  const d=(k,l)=>(k-l)**2;
+  let Do=0,De=0;
+  for(const k of cats)for(const l of cats){Do+=o[k][l]*d(k,l);De+=nk[k]*nk[l]*d(k,l);}
+  Do/=n; De/=n*(n-1);
+  if(De<1e-9) return 1;
+  return Math.round((1-Do/De)*1000)/1000;
+}
+
+function pctAgree(ratingsByCR){
+  let ag=0,tot=0;
+  for(const rs of ratingsByCR){
+    for(let i=0;i<rs.length;i++)for(let j=i+1;j<rs.length;j++){
+      if(rs[i]===rs[j])ag++; tot++;
+    }
+  }
+  return tot?Math.round(ag/tot*100):null;
+}
+
+function kappaClass(k){
+  if(k===null) return "k-na";
+  if(k<0) return "k-neg";
+  if(k<0.20) return "k-slight";
+  if(k<0.40) return "k-fair";
+  if(k<0.67) return "k-mod";
+  if(k<0.80) return "k-sub";
+  return "k-perf";
+}
+function kappaLabel(k){
+  if(k===null) return "Données insuffisantes";
+  if(k<0) return "Désaccord";
+  if(k<0.20) return "Très faible";
+  if(k<0.40) return "Faible";
+  if(k<0.67) return "Modéré (< seuil)";
+  if(k<0.80) return "Acceptable (≥ 0.67)";
+  return "Fiable (≥ 0.80)";
+}
+
+function computeIAA(dataByEv){
+  return ALL_CRIT.map(c=>{
+    const key=fieldKey(c);
+    const overlap=c.role==="PM"?OVERLAP_PM:OVERLAP_MR;
+    const raters=EVALUATORS.filter(ev=>EVALUATOR_ROLES[ev]===c.role);
+    const byCR=[], byCRscore=[];
+    for(const i of overlap){
+      const cr=crId(i);
+      const submitted=raters.filter(ev=>!!dataByEv[ev]?.[cr]);
+      if(submitted.length<2) continue;
+      const vals=submitted.map(ev=>{
+        const v=dataByEv[ev][cr][key];
+        return (v!=null&&v!==0&&v!=="N/A"&&Number.isInteger(v))?v:"NA";
+      });
+      byCR.push(vals);
+      const scores=vals.filter(v=>v!=="NA");
+      if(scores.length>=2) byCRscore.push(scores);
+    }
+    return {crit:c, kappa:krippendorffAlpha(byCRscore), pct:pctAgree(byCR),
+            n:byCR.length, nScore:byCRscore.length, overlapSize:overlap.size};
+  });
+}
+
+function renderIAA(dataByEv){
+  const rows=computeIAA(dataByEv);
+  let tbody="";
+  let prevBloc="";
+  for(const b of BLOCS){
+    for(const c of b.crit){
+      const row=rows.find(r=>r.crit.name===c.name);
+      const kLabel=row.kappa!==null?`${row.kappa.toFixed(3)} (n=${row.nScore})`:"—";
+      const pLabel=row.pct!==null?row.pct+"%":"—";
+      const cls=kappaClass(row.kappa);
+      const interp=kappaLabel(row.kappa);
+      if(b.name!==prevBloc){
+        tbody+=`<tr><td colspan="6" style="background:#EEF2FF;color:#4338CA;font-weight:700;font-size:.72rem;padding:5px 10px">${b.name}</td></tr>`;
+        prevBloc=b.name;
+      }
+      tbody+=`<tr>
+        <td style="font-weight:500">${c.name}</td>
+        <td><span style="font-size:.7rem;font-weight:600;padding:2px 7px;border-radius:99px;background:${c.role==="PM"?"#EFF6FF":"#FCE7F3"};color:${c.role==="PM"?"#2563EB":"#BE185D"}">${c.role}</span></td>
+        <td style="text-align:center">${row.n}<span style="font-size:.65rem;color:var(--fg2)">/${row.overlapSize}</span></td>
+        <td style="text-align:center;font-weight:600">${pLabel}</td>
+        <td style="text-align:center"><span class="kappa-chip ${cls}">${kLabel}</span></td>
+        <td>${interp}</td>
+      </tr>`;
+    }
+  }
+  const summaryRow=(label,roleRows,color)=>{
+    const v=roleRows.filter(r=>r.kappa!==null);
+    const mean=v.length?v.reduce((s,r)=>s+r.kappa,0)/v.length:null;
+    const nF=v.filter(r=>r.kappa>=0.80).length;
+    const nA=v.filter(r=>r.kappa>=0.67&&r.kappa<0.80).length;
+    const nW=v.filter(r=>r.kappa<0.67).length;
+    const cls=kappaClass(mean);
+    const lbl=mean!==null?mean.toFixed(3):"—";
+    return `<tr style="border-top:2px solid var(--border);background:#F8FAFC">
+      <td style="font-weight:700;font-size:.82rem">${label}</td>
+      <td><span style="font-size:.7rem;font-weight:600;padding:2px 7px;border-radius:99px;background:${color.bg};color:${color.fg}">${color.role}</span></td>
+      <td></td><td></td>
+      <td style="text-align:center"><span class="kappa-chip ${cls}" style="font-weight:700">α moy. = ${lbl}</span></td>
+      <td style="font-size:.78rem;color:var(--fg2)">
+        <span style="color:#15803D;font-weight:600">${nF} fiable${nF>1?"s":""}</span> ·
+        <span style="color:#0369A1;font-weight:600">${nA} acceptable${nA>1?"s":""}</span> ·
+        <span style="color:#B45309;font-weight:600">${nW} à recalibrer</span>
+        <span style="color:var(--fg2)"> / ${v.length}</span>
+      </td>
+    </tr>`;
+  };
+  const pmRows=rows.filter(r=>r.crit.role==="PM");
+  const mrRows=rows.filter(r=>r.crit.role==="MR");
+  const valid=rows.filter(r=>r.kappa!==null);
+  const meanAlpha=valid.length?valid.reduce((s,r)=>s+r.kappa,0)/valid.length:null;
+  const nFiable=valid.filter(r=>r.kappa>=0.80).length;
+  const nAccept=valid.filter(r=>r.kappa>=0.67&&r.kappa<0.80).length;
+  const nFaible=valid.filter(r=>r.kappa<0.67).length;
+  const meanCls=kappaClass(meanAlpha);
+  const meanLabel=meanAlpha!==null?meanAlpha.toFixed(3):"—";
+  tbody+=summaryRow("Résumé PM",pmRows,{bg:"#EFF6FF",fg:"#2563EB",role:"PM"});
+  tbody+=summaryRow("Résumé MR",mrRows,{bg:"#FCE7F3",fg:"#BE185D",role:"MR"});
+  tbody+=`<tr style="border-top:2px solid var(--border);background:#F8FAFC">
+    <td colspan="2" style="font-weight:700;font-size:.85rem">Résumé global</td>
+    <td></td><td></td>
+    <td style="text-align:center">
+      <span class="kappa-chip ${meanCls}" style="font-weight:700">α moy. = ${meanLabel}</span>
+    </td>
+    <td style="font-size:.8rem;color:var(--fg2)">
+      <span style="color:#15803D;font-weight:600">${nFiable} fiable${nFiable>1?"s":""}</span> ·
+      <span style="color:#0369A1;font-weight:600">${nAccept} acceptable${nAccept>1?"s":""}</span> ·
+      <span style="color:#B45309;font-weight:600">${nFaible} à recalibrer</span>
+      <span style="color:var(--fg2)"> / ${valid.length} critères évalués</span>
+    </td>
+  </tr>`;
+  return `
+    <div class="iaa-legend">
+      <span style="font-size:.75rem;font-weight:600;color:var(--fg2);margin-right:4px">Seuils Krippendorff :</span>
+      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#FEE2E2"></span>&lt;0 Désaccord</span>
+      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#FED7AA"></span>&lt;0.40 Faible</span>
+      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#E0F2FE"></span>&lt;0.67 Modéré</span>
+      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#D1FAE5"></span>≥ 0.67 Acceptable</span>
+      <span class="iaa-leg-item"><span class="iaa-dot" style="background:#BBF7D0"></span>≥ 0.80 Fiable</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Critère</th><th>Rôle</th>
+          <th style="text-align:center">CRs IAA (n)</th>
+          <th style="text-align:center">% Accord</th>
+          <th style="text-align:center">Alpha de Krippendorff</th>
+          <th>Interprétation</th>
+        </tr></thead>
+        <tbody>${tbody}</tbody>
+      </table>
+    </div>
+    <div class="iaa-note">
+      <strong>IAA PM</strong> : calculé sur les 10 CRs communs aux 4 PMs (CR-33..42).
+      <strong>IAA MR</strong> : calculé sur les 15 CRs communs aux 2 MRs (CR-31..45).
+      Le % accord inclut les N/A comme réponse valide (N/A vs score = désaccord). L'Alpha est calculé sur les scores 1–4 uniquement.
+      CRs non encore soumis exclus. Seuils : α ≥ 0.80 fiable, α ≥ 0.67 acceptable.
+    </div>`;
+}
+
+async function loadAll(){
+  document.getElementById("loading").hidden=false;
+  document.getElementById("content").hidden=true;
+  try{
+    allRecords=await fetchAll();
+    const dataByEv=buildIndex(allRecords);
+    window._dataByEv=dataByEv;
+    renderProgress(dataByEv);
+    renderTabs(dataByEv);
+    document.getElementById("last-refresh").textContent=
+      "Mis à jour : "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+    document.getElementById("loading").hidden=true;
+    document.getElementById("content").hidden=false;
+  }catch(e){
+    document.getElementById("loading").innerHTML=
+      `<div class="err-box">Erreur de chargement : ${e.message}<br>Vérifiez que votre token Airtable est valide.</div>`;
+  }
+}
+
+loadAll();
+</script>
+</body>
+</html>

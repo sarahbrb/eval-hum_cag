@@ -1,4 +1,4 @@
-<title>Évaluation CAG — 75 CRs</title>
+<title>Évaluation CAG</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;1,400&display=swap">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -190,14 +190,14 @@ html,body{height:100%;font-family:"Inter",system-ui,sans-serif;font-size:14px;ba
     <div class="reg-logo">
       <div class="reg-dot">CAG</div>
       <div>
-        <div class="reg-title">Évaluation humaine — 75 CRs</div>
+        <div class="reg-title">Évaluation humaine · 75 CRs</div>
         <div class="reg-sub">Phase principale · apertus70b METABRIC conservateur</div>
       </div>
     </div>
     <div class="fg">
       <label>Votre nom</label>
       <select id="rname" onchange="checkGo()" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg2);font-family:inherit;font-size:.9375rem;color:var(--fg);cursor:pointer">
-        <option value="">— Choisissez votre nom —</option>
+        <option value="">Choisissez votre nom</option>
         <optgroup label="Physicien Médical">
           <option value="Sophie">Sophie</option>
           <option value="Estelle">Estelle</option>
@@ -252,7 +252,7 @@ html,body{height:100%;font-family:"Inter",system-ui,sans-serif;font-size:14px;ba
       <button class="btn-submit-cr" id="btn-submit-cr" disabled>✓ Soumettre ce CR</button>
     </div>
     <div id="ro-banner" style="display:none;background:#EFF6FF;border-bottom:1px solid #BFDBFE;padding:8px 20px;font-size:.8125rem;color:#1E40AF;font-weight:600;text-align:center">
-      ✅ CR déjà soumis — consultation en lecture seule, aucune modification possible
+      ✅ Ce CR a déjà été soumis. Consultation en lecture seule.
     </div>
     <div class="panels">
       <div class="pl">
@@ -591,7 +591,7 @@ function showDashboard(fromSync=false){
   showView("dashboard");
   const total=myCRs.length;
   const done=myCRs.filter(i=>submittedCRs[i]).length;
-  document.getElementById("dash-title").textContent=`Vos CRs — ${evalName} (${evalRole})`;
+  document.getElementById("dash-title").textContent=`${evalName} (${evalRole})`;
   document.getElementById("dash-sub").textContent=`${done}/${total} CRs soumis · ${total-done} restants`;
   document.getElementById("hdr-prog").innerHTML=`<strong>${done}</strong>/${total} soumis`;
 
@@ -707,7 +707,7 @@ function renderRight(){
             ${vals.map(v=>`<button class="rb${val===v?" on":""}" data-v="${v}" ${isLocked||readOnlyMode?"disabled":""} onclick='rate(${JSON.stringify(c.name)},"${v}")'>${v}</button>`).join("")}
           </div>
         </div>
-        ${val!=null?`<div class="note-desc" data-v="${val}"><b>${val} · ${noteLbl}</b> — ${noteText}</div>`:""}
+        ${val!=null?`<div class="note-desc" data-v="${val}"><b>${val} · ${noteLbl}</b> : ${noteText}</div>`:""}
       </div>`;
     }
     html+="</div></div>";
@@ -741,7 +741,7 @@ function rate(cname,val){
       const noteLbl=SCALE_LABELS[v]||"";
       if(!nd){nd=document.createElement("div");nd.className="note-desc";el.appendChild(nd);}
       nd.dataset.v=v;
-      nd.innerHTML=`<b>${v} · ${noteLbl}</b> — ${noteText}`;
+      nd.innerHTML=`<b>${v} · ${noteLbl}</b> : ${noteText}`;
     } else if(nd){nd.remove();}
     const bEl=el.closest(".bloc-body");
     if(bEl){

@@ -182,6 +182,12 @@ html,body{height:100%;font-family:"Inter",system-ui,sans-serif;font-size:14px;ba
 @keyframes spin{to{transform:rotate(360deg)}}
 .overlay-btn{padding:11px 28px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:.9rem;font-weight:600;cursor:pointer;margin-top:8px}
 .overlay-btn-sec{padding:11px 20px;background:#fff;color:var(--fg2);border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.9rem;cursor:pointer;margin-top:8px;margin-left:8px}
+
+.code-input-wrap{margin-top:12px}
+.code-input-wrap label{display:block;font-size:.8125rem;font-weight:600;color:var(--fg2);margin-bottom:5px}
+.code-input-wrap input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg2);font-family:inherit;font-size:.9375rem;color:var(--fg);letter-spacing:.12em;outline:none;box-sizing:border-box}
+.code-input-wrap input:focus{border-color:var(--pm-border,#93C5FD)}
+.code-input-wrap input.err{border-color:#EF4444}
 </style>
 
 <!-- ── Registration screen ── -->
@@ -209,6 +215,11 @@ html,body{height:100%;font-family:"Inter",system-ui,sans-serif;font-size:14px;ba
           <option value="Dr Gautier Glemarec">Dr Gautier Glemarec</option>
         </optgroup>
       </select>
+    </div>
+
+    <div class="code-input-wrap" id="code-wrap" style="display:none">
+      <label>Code personnel</label>
+      <input type="password" id="rcode" placeholder="••••••" maxlength="6" autocomplete="off" oninput="checkGo()">
     </div>
     <div class="fg" id="role-display" style="display:none">
       <label>Rôle détecté</label>
@@ -436,12 +447,20 @@ const SCALE_LABELS = {"1":"Pas du tout","2":"Partiellement","3":"Globalement","4
 
 // ── State ─────────────────────────────────────────────────────
 const SKEY_MAIN = "cag_eval_main_v1";
+const CODES = {
+  "Sophie":              "UIG814",
+  "Estelle":             "OPD658",
+  "Veronica":            "AYE858",
+  "Christophe":          "EIC752",
+  "Dr Odile BRUN":       "ECF547",
+  "Dr Gautier Glemarec": "BVZ778",
+};
 let evalName="", evalRole="", cur=0, ratings={}, filter="all", submittedCRs={}, view="dashboard";
 let myCRs=[], pmAnswersCache={}, readOnlyMode=false;
 
 // ── Persistence ───────────────────────────────────────────────
 function save(){
-  try{localStorage.setItem(SKEY_MAIN,JSON.stringify({evalName,evalRole,ratings,submittedCRs,cur,view}));}catch(e){}
+  try{localStorage.setItem(SKEY_MAIN,JSON.stringify({evalName,evalRole,ratings,submittedCRs,cur,view,authenticated:true}));}catch(e){}
 }
 function loadState(){
   try{return JSON.parse(localStorage.getItem(SKEY_MAIN)||"null");}catch(e){return null;}
@@ -462,16 +481,20 @@ function checkGo(){
   const a=ASSIGNMENTS[n];
   const chip=document.getElementById("role-auto-chip");
   const rdiv=document.getElementById("role-display");
+  const codeWrap=document.getElementById("code-wrap");
+  const code=document.getElementById("rcode").value.trim().toUpperCase();
   if(a){
     rdiv.style.display="block";
     chip.textContent=a.role==="PM"?"Physicien Médical":"Médecin Radiothérapeute";
     chip.style.background=a.role==="PM"?"var(--pm-bg)":"var(--mr-bg)";
     chip.style.color=a.role==="PM"?"var(--pm-text)":"var(--mr-text)";
     chip.style.border=a.role==="PM"?"1px solid var(--pm-border)":"1px solid var(--mr-border)";
+    codeWrap.style.display="block";
   }else{
     rdiv.style.display="none";
+    codeWrap.style.display="none";
   }
-  document.getElementById("gobtn").disabled=!n||!a;
+  document.getElementById("gobtn").disabled=!n||!a||!code;
 }
 function showErr(msg){
   const el=document.getElementById("reg-err");
@@ -482,6 +505,13 @@ async function start(){
   const name=document.getElementById("rname").value;
   const a=ASSIGNMENTS[name];
   if(!a) return;
+  const code=document.getElementById("rcode").value.trim().toUpperCase();
+  if(code!==CODES[name]){
+    document.getElementById("rcode").classList.add("err");
+    showErr("Code incorrect. Contactez l'administratrice de l'étude.");
+    return;
+  }
+  document.getElementById("rcode").classList.remove("err");
   const role=a.role;
   document.getElementById("reg-err").style.display="none";
   evalName=name; evalRole=role;
@@ -548,6 +578,7 @@ function logout(){
   document.getElementById("app").style.display="none";
   document.getElementById("reg").style.display="";
   document.getElementById("rname").value="";
+  document.getElementById("rcode").value="";
   document.querySelectorAll(".rbtn").forEach(b=>b.classList.remove("sel"));
   checkGo();
   showView("none");
@@ -972,7 +1003,7 @@ const CRS = [{"id": 0, "cr_text": "Madame RAYMOND, née LOPEZ Élise, âgée de 
 // ── Init ──────────────────────────────────────────────────────
 (function init(){
   const saved=loadState();
-  if(saved&&saved.evalName&&saved.evalRole&&ASSIGNMENTS[saved.evalName]){
+  if(saved&&saved.evalName&&saved.evalRole&&saved.authenticated&&ASSIGNMENTS[saved.evalName]){
     evalName=saved.evalName; evalRole=saved.evalRole;
     ratings=saved.ratings||{}; submittedCRs=saved.submittedCRs||{};
     myCRs=ASSIGNMENTS[evalName].crs;

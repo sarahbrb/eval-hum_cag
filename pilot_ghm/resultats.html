@@ -147,22 +147,22 @@ const N_CRS = 5;
 
 // Critères avec rôle et préfixe Airtable
 const BLOCS = [
-  {name:"1. Réalisme dosimétrique", crit:[
+  {name:"Réalisme dosimétrique", crit:[
     {name:"Dose totale",                role:"PM"},
     {name:"Fractionnement",             role:"PM"},
     {name:"Technique",                  role:"PM"},
   ]},
-  {name:"2. Cohérence diag. & traitement", crit:[
+  {name:"Cohérence diagnostique & traitement", crit:[
     {name:"Volumes cibles",             role:"MR"},
     {name:"Chirurgie",                  role:"MR"},
     {name:"Hormonothérapie",            role:"MR"},
   ]},
-  {name:"3. Intégrité", crit:[
-    {name:"Hall. dosimétriques",        role:"PM"},
-    {name:"Hall. cliniques",            role:"MR"},
+  {name:"Intégrité", crit:[
+    {name:"Hallucinations dosimétriques",key:"Hall. dosimétriques",role:"PM"},
+    {name:"Hallucinations cliniques",    key:"Hall. cliniques",    role:"MR"},
     {name:"Contradictions internes",    role:"MR"},
   ]},
-  {name:"4. Complétude", crit:[
+  {name:"Complétude", crit:[
     {name:"Indication / diagnostic",          role:"MR"},
     {name:"Contexte thérapeutique",           role:"MR"},
     {name:"Caractéristiques du traitement",   role:"MR"},
@@ -170,15 +170,15 @@ const BLOCS = [
     {name:"Bilan de fin",                     role:"MR"},
     {name:"Suites thérapeutiques",            role:"MR"},
   ]},
-  {name:"5. Rédaction", crit:[
+  {name:"Rédaction", crit:[
     {name:"Terminologie",               role:"PM"},
     {name:"Organisation",               role:"MR"},
-    {name:"Synthèse & Lisibilité",      role:"MR"},
+    {name:"Clarté & Lisibilité",key:"Synthèse & Lisibilité",role:"MR"},
   ]},
-  {name:"6. Cohérence", crit:[
+  {name:"Cohérence", crit:[
     {name:"Correspondance profil → CR", role:"PM"},
   ]},
-  {name:"7. Impression globale", crit:[
+  {name:"Impression globale", crit:[
     {name:"Impression globale",         role:"MR"},
   ]},
 ];
@@ -186,7 +186,7 @@ const BLOCS = [
 const ALL_CRIT = BLOCS.flatMap(b=>b.crit);
 
 function crId(idx){ return `CR-${String(idx+1).padStart(2,"0")}`; }
-function fieldKey(c){ return (c.role==="PM"?"pm_":"mr_")+c.name; }
+function fieldKey(c){ return (c.role==="PM"?"pm_":"mr_")+(c.key||c.name); }
 
 // ── Fetch all records ─────────────────────────────────────────
 let allRecords = [];

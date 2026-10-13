@@ -395,9 +395,9 @@ const CRITERIA = [
    notes:{"1":"Chirurgie absente ou contradictoire.","2":"Chirurgie mentionnée mais avec des incohérences.","3":"Chirurgie mentionnée et globalement cohérente.","4":"Chirurgie clairement identifiée et parfaitement cohérente.","N/A":"Chirurgie non réalisée ou non applicable."}},
   {name:"Hormonothérapie",role:"MR",scale:"1-4/NA",q:"Si mentionnée, l'hormonothérapie adjuvante est-elle appropriée au statut des récepteurs hormonaux (ER/PR) indiqué dans le CR ?",
    notes:{"1":"Hormonothérapie prescrite pour un CR ER−/PR− ou absente pour ER+/PR+.","2":"Hormonothérapie partiellement appropriée.","3":"Hormonothérapie globalement adaptée avec une imprécision.","4":"Hormonothérapie parfaitement adaptée au statut ER/PR et à la ménopause.","N/A":"Hormonothérapie non indiquée ou non mentionnée."}},
-  {name:"Hall. dosimétriques",role:"PM",scale:"1-4/NA",q:"Dans quelle mesure le CR est-il exempt de valeurs physiquement impossibles ou de techniques inexistantes ?\n(énergie inconnue, dose hors plage clinique, technique non reconnue)",
+  {name:"Hallucinations dosimétriques",key:"Hall. dosimétriques",role:"PM",scale:"1-4/NA",q:"Dans quelle mesure le CR est-il exempt de valeurs physiquement impossibles ou de techniques inexistantes ?\n(énergie inconnue, dose hors plage clinique, technique non reconnue)",
    notes:{"1":"Plusieurs hallucinations dosimétriques majeures.","2":"Une hallucination dosimétrique significative.","3":"Légère imprécision dosimétrique sans impact clinique majeur.","4":"Aucune hallucination dosimétrique détectée.","N/A":"Données dosimétriques absentes ou non évaluables."}},
-  {name:"Hall. cliniques",role:"MR",scale:"1-4/NA",q:"Dans quelle mesure le CR est-il exempt de protocoles inexistants, de médicaments inconnus ou d'associations thérapeutiques impossibles ?",
+  {name:"Hallucinations cliniques",key:"Hall. cliniques",role:"MR",scale:"1-4/NA",q:"Dans quelle mesure le CR est-il exempt de protocoles inexistants, de médicaments inconnus ou d'associations thérapeutiques impossibles ?",
    notes:{"1":"Plusieurs hallucinations cliniques majeures.","2":"Une hallucination clinique significative.","3":"Légère incohérence clinique sans impact majeur.","4":"Aucune hallucination clinique détectée.","N/A":"Données cliniques insuffisantes pour évaluer."}},
   {name:"Contradictions internes",role:"MR",scale:"1-4/NA",q:"Dans quelle mesure le CR est-il exempt de contradictions internes ?\n(ex. : mastectomie décrite mais irradiation partielle du sein ; dates incohérentes)",
    notes:{"1":"Contradictions majeures rendant le CR incohérent.","2":"Une contradiction significative.","3":"Légère contradiction sans impact clinique majeur.","4":"Aucune contradiction interne détectée.","N/A":"Impossible à évaluer (données insuffisantes)."}},
@@ -417,7 +417,7 @@ const CRITERIA = [
    notes:{"1":"Terminologie largement incorrecte.","2":"Quelques erreurs terminologiques importantes.","3":"Terminologie globalement correcte avec quelques imprécisions.","4":"Vocabulaire radiothérapeutique précis et standardisé."}},
   {name:"Organisation",role:"MR",scale:"1-4",q:"Le CR suit-il une structure logique et claire ? Les informations sont-elles présentées dans un ordre cohérent ?\n(contexte → diagnostic → traitement → suivi)",
    notes:{"1":"Structure absente ou chaotique.","2":"Structure partielle, plusieurs sections désordonnées.","3":"Structure globalement logique avec quelques éléments mal positionnés.","4":"Structure claire et logique."}},
-  {name:"Synthèse & Lisibilité",role:"MR",scale:"1-4",q:"Le texte est-il fluide, concis et adapté au style médical ?\n(lisibilité, concision, absence de répétitions)",
+  {name:"Clarté & Lisibilité",key:"Synthèse & Lisibilité",role:"MR",scale:"1-4",q:"Le texte est-il fluide, concis et adapté au style médical ?\n(lisibilité, concision, absence de répétitions)",
    notes:{"1":"Texte illisible ou clairement non médical.","2":"Texte compréhensible mais avec des maladresses stylistiques.","3":"Texte globalement bien rédigé avec quelques légères imperfections.","4":"Texte naturel, fluide et parfaitement adapté."}},
   {name:"Correspondance profil → CR",role:"PM",scale:"1-4",q:"Les informations du CR (stade, chirurgie, ER/PR, chimiothérapie…) correspondent-elles aux données du profil patient fourni ?\n⚠ Nécessite d'avoir le profil patient sous les yeux.",
    hint:"Le profil peut être mentionné de façon reformulée (et non repris mot pour mot) : cela est considéré comme correct.",
@@ -427,13 +427,13 @@ const CRITERIA = [
 ];
 
 const BLOCS = [
-  {name:"1. Réalisme dosimétrique",          range:[0,2]},
-  {name:"2. Cohérence diag. & traitement",   range:[3,5]},
-  {name:"3. Intégrité",                      range:[6,8]},
-  {name:"4. Complétude",                     range:[9,14]},
-  {name:"5. Rédaction",                      range:[15,17]},
-  {name:"6. Cohérence",                       range:[18,18]},
-  {name:"7. Impression globale",              range:[19,19]},
+  {name:"Réalisme dosimétrique",              range:[0,2]},
+  {name:"Cohérence diagnostique & traitement",range:[3,5]},
+  {name:"Intégrité",                          range:[6,8]},
+  {name:"Complétude",                         range:[9,14]},
+  {name:"Rédaction",                          range:[15,17]},
+  {name:"Cohérence",                          range:[18,18]},
+  {name:"Impression globale",                 range:[19,19]},
 ];
 
 const SCALE_LABELS = {"1":"Pas du tout","2":"Partiellement","3":"Globalement","4":"Complètement","N/A":"N/A"};
@@ -655,7 +655,7 @@ async function loadSubmittedAnswers(idx){
     const f=rec.fields, d={};
     const prefix=evalRole==="PM"?"pm_":"mr_";
     for(const c of CRITERIA.filter(x=>x.role===evalRole)){
-      const v=f[prefix+c.name];
+      const v=f[prefix+(c.key||c.name)];
       if(v!=null) d[c.name]=String(v);
     }
     if(evalRole==="PM"&&f.pm_commentaire) d._cmt_pm=f.pm_commentaire;
@@ -829,14 +829,14 @@ async function loadPMAnswers(crIdx){
 
 function renderPMAnswers(data){
   const content=document.getElementById("pm-answers-content");
-  const PM_CRITERIA_NAMES=["Dose totale","Fractionnement","Technique","Hall. dosimétriques","Terminologie"];
+  const pmCrit=CRITERIA.filter(c=>c.role==="PM");
   let html=`<div style="font-size:.75rem;color:var(--fg2);margin-bottom:8px">Évalué par <strong>${data.pm_evaluateur}</strong></div>`;
   html+=`<div class="pm-grid">`;
-  for(const name of PM_CRITERIA_NAMES){
-    const val=data["pm_"+name]!=null?String(data["pm_"+name]):"—";
-    const crit=CRITERIA.find(c=>c.name===name);
-    const note=crit&&val!=="—"?(crit.notes[val]||""):"";
-    html+=`<div class="pm-crit-name">${name}</div><div class="pm-crit-val">${val}</div>`;
+  for(const crit of pmCrit){
+    const atKey="pm_"+(crit.key||crit.name);
+    const val=data[atKey]!=null?String(data[atKey]):"—";
+    const note=val!=="—"?(crit.notes[val]||""):"";
+    html+=`<div class="pm-crit-name">${crit.name}</div><div class="pm-crit-val">${val}</div>`;
     if(note) html+=`<div class="pm-crit-note">${note}</div>`;
   }
   if(data.pm_commentaire){
@@ -878,14 +878,14 @@ async function submitCR(){
         statut=existing?.fields?.mr_evaluateur?"Complet":"PM_fait";
       }
       const fields={cr_id:crId,statut,pm_evaluateur:evalName,pm_timestamp:ts,mr_evaluateur:mrName,pm_commentaire:d._cmt_pm||""};
-      for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+c.name]=toNum(d[c.name]);
+      for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+(c.key||c.name)]=toNum(d[c.name]);
       const s=await atSubmit(crId,mrName,fields);
       if(s) sent++;
     }
     ok=(sent===pairedMRs.length||pairedMRs.length===0);
     if(pairedMRs.length===0){
       const fields={cr_id:crId,statut:"PM_fait",pm_evaluateur:evalName,pm_timestamp:ts,mr_evaluateur:"",pm_commentaire:d._cmt_pm||""};
-      for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+c.name]=toNum(d[c.name]);
+      for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+(c.key||c.name)]=toNum(d[c.name]);
       ok=await atSubmit(crId,"",fields);
     }
   } else {
@@ -894,7 +894,7 @@ async function submitCR(){
     const statut=existing?.fields?.pm_evaluateur?"Complet":"MR_fait";
     // cr_id obligatoire pour retrouver ce record quand le PM soumettra ensuite
     const fields={cr_id:crId,statut,mr_evaluateur:evalName,mr_timestamp:ts,mr_commentaire:d._cmt_mr||""};
-    for(const c of CRITERIA.filter(x=>x.role==="MR")) fields["mr_"+c.name]=toNum(d[c.name]);
+    for(const c of CRITERIA.filter(x=>x.role==="MR")) fields["mr_"+(c.key||c.name)]=toNum(d[c.name]);
     ok=await atSubmit(crId,evalName,fields);
   }
 

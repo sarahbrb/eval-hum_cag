@@ -238,7 +238,7 @@ html,body{height:100%;font-family:"Inter",system-ui,sans-serif;font-size:14px;ba
     <span class="hdr-user" id="hdr-user"></span>
     <div class="hdr-mid"></div>
     <span class="hdr-prog" id="hdr-prog"></span>
-    <button class="btn-logout" id="btn-logout" title="Changer d'évaluateur">⇐</button>
+    <button class="btn-logout" id="btn-logout" title="Se déconnecter">Déconnexion</button>
   </header>
 
   <!-- Dashboard -->
@@ -573,7 +573,7 @@ function launch(){
 }
 
 function logout(){
-  if(!confirm("Revenir à l'identification ? La progression non soumise reste sauvegardée.")) return;
+  if(!confirm("Se déconnecter ? La progression non soumise reste sauvegardée localement.")) return;
   evalName=""; evalRole=""; myCRs=[]; view="dashboard"; cur=0;
   document.getElementById("app").style.display="none";
   document.getElementById("reg").style.display="";

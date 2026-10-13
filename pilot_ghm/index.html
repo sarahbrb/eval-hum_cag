@@ -377,12 +377,12 @@ function getPairedPM(name, crIdx){
 
 // ── Criteria ─────────────────────────────────────────────────
 const CRITERIA = [
-  {name:"Dose totale",role:"PM",scale:"1-4/NA",q:"La dose totale prescrite est-elle cohérente avec les standards ?",
-   notes:{"1":"Dose totale absente ou clairement erronée.","2":"Dose totale présente mais avec une erreur sur la valeur ou l'unité.","3":"Dose totale globalement correcte avec une légère imprécision.","4":"Dose totale parfaitement cohérente avec les standards de radiothérapie.","N/A":"Dose totale non mentionnée dans le CR."}},
-  {name:"Fractionnement",role:"PM",scale:"1-4/NA",q:"Le nombre de séances et la dose par fraction sont-ils cohérents entre eux ?\n(ex. : 25 × 2 Gy = 50 Gy)",
-   notes:{"1":"Incohérence mathématique évidente ou fractionnement inexistant.","2":"Fractionnement partiellement correct mais avec une erreur.","3":"Fractionnement globalement correct avec une légère imprécision.","4":"Dose/fraction, nombre de séances et dose totale parfaitement cohérents.","N/A":"Aucun élément de fractionnement mentionné."}},
-  {name:"Technique",role:"PM",scale:"1-4/NA",q:"La technique utilisée (3D, IMRT, VMAT…) est-elle adaptée à la localisation tumorale décrite ?",
-   notes:{"1":"Technique absente ou clairement inadaptée.","2":"Technique mentionnée mais partiellement incorrecte.","3":"Technique globalement appropriée avec une imprécision mineure.","4":"Technique parfaitement décrite et adaptée au cas clinique.","N/A":"Aucune technique d'irradiation mentionnée."}},
+  {name:"Dose totale",role:"PM",scale:"1-4",q:"La dose totale prescrite est-elle cohérente avec les standards ?",
+   notes:{"1":"Dose totale absente ou clairement erronée (l'absence compte comme un 1).","2":"Dose totale présente mais avec une erreur sur la valeur ou l'unité.","3":"Dose totale globalement correcte avec une légère imprécision.","4":"Dose totale parfaitement cohérente avec les standards de radiothérapie."}},
+  {name:"Fractionnement",role:"PM",scale:"1-4",q:"Le nombre de séances et la dose par fraction sont-ils cohérents entre eux ?\n(ex. : 25 × 2 Gy = 50 Gy)",
+   notes:{"1":"Fractionnement absent ou incohérence mathématique évidente (l'absence compte comme un 1).","2":"Fractionnement partiellement correct mais avec une erreur.","3":"Fractionnement globalement correct avec une légère imprécision.","4":"Dose/fraction, nombre de séances et dose totale parfaitement cohérents."}},
+  {name:"Technique",role:"PM",scale:"1-4",q:"La technique utilisée (3D, IMRT, VMAT…) est-elle adaptée à la localisation tumorale décrite ?",
+   notes:{"1":"Technique absente ou clairement inadaptée (l'absence compte comme un 1).","2":"Technique mentionnée mais partiellement incorrecte.","3":"Technique globalement appropriée avec une imprécision mineure.","4":"Technique parfaitement décrite et adaptée au cas clinique."}},
   {name:"Volumes cibles",role:"MR",scale:"1-4/NA",q:"Les volumes irradiés (sein seul, ganglions, CMI) sont-ils cohérents avec le stade ganglionnaire mentionné dans le CR ?",
    notes:{"1":"Volumes clairement inappropriés au stade.","2":"Volumes partiellement adaptés avec des omissions importantes.","3":"Volumes globalement adaptés avec une imprécision mineure.","4":"Volumes cibles parfaitement cohérents avec le stade et la chirurgie.","N/A":"Stade ganglionnaire non mentionné."}},
   {name:"Chirurgie",role:"MR",scale:"1-4/NA",q:"La chirurgie préalable (tumorectomie vs mastectomie) est-elle mentionnée et cohérente avec le traitement décrit ?",

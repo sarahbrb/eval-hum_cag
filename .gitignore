@@ -1,0 +1,31 @@
+# Sécurité : ne jamais commiter
+.git-credentials
+
+# Projets indépendants (ont leur propre git ou ne sont pas à versionner ici)
+synthetic-rt-reports-fr/
+rag-rt-reports/
+parhaf-corpus/
+mon-site/
+
+# Symlinks vers les filesystems Jean Zay
+scratch
+work
+worksf
+
+# Fichiers système et config personnelle
+.bash_history
+.cache/
+.claude
+.claude.json
+.config/
+.copilot/
+.dotnet/
+.gitconfig
+.lesshst
+.local/
+.nv/
+.ssh/
+.viminfo
+.vscode
+.vscode-server
+.wget-hsts

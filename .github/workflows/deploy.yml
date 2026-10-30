@@ -28,7 +28,7 @@ jobs:
           AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
           PILOT_TABLE_ID: ${{ secrets.PILOT_TABLE_ID }}
           GHM_TABLE_ID: ${{ secrets.GHM_TABLE_ID }}
-        run: python3 inject_token.py
+        run: cd eval-hum-cag && python3 scripts/inject_token.py
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -36,7 +36,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: './eval-hum-cag'
 
       - name: Deploy to GitHub Pages
         id: deployment

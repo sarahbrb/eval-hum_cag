@@ -426,9 +426,9 @@ const CRITERIA = [
    notes:{"1":"Structure absente ou chaotique.","2":"Structure partielle, plusieurs sections désordonnées.","3":"Structure globalement logique avec quelques éléments mal positionnés.","4":"Structure claire et logique."}},
   {name:"Clarté & Lisibilité",key:"Synthèse & Lisibilité",role:"MR",scale:"1-4",q:"Le texte est-il fluide, concis et adapté au style médical ?\n(lisibilité, concision, absence de répétitions)",
    notes:{"1":"Texte illisible ou clairement non médical.","2":"Texte compréhensible mais avec des maladresses stylistiques.","3":"Texte globalement bien rédigé avec quelques légères imperfections.","4":"Texte naturel, fluide et parfaitement adapté."}},
-  {name:"Correspondance profil → CR",role:"PM",scale:"1-4",q:"Les informations du CR (stade, chirurgie, ER/PR, chimiothérapie…) correspondent-elles aux données du profil patient fourni ?\n⚠ Nécessite d'avoir le profil patient sous les yeux.",
-   hint:"Le profil peut être mentionné de façon reformulée (et non repris mot pour mot) : cela est considéré comme correct.",
-   notes:{"1":"Contradictions majeures entre le profil et le CR.","2":"Contradictions partielles importantes.","3":"Globalement cohérent avec quelques divergences mineures.","4":"Parfaite cohérence entre le profil et le CR.","N/A":"Impossible à évaluer."}},
+  {name:"Correspondance profil → CR",role:"PM",scale:"1-4",q:"Les champs du profil patient sont-ils présents ET corrects dans le CR ?\n⚠ Avoir le profil patient sous les yeux. Direction Profil → CR uniquement.\nErreur = absence d'un champ attendu OU valeur incorrecte.\nChimio/Hormono \"non\" : absence dans le CR acceptée. Reformulation acceptée.\nEx. : profil \"positifs\" → CR \"ER+\" ✓ ; profil \"négatifs\" → CR \"HER2−\" ✓",
+   hint:"Compter le nombre d'erreurs (absences + inexactitudes) parmi tous les champs affichés dans le profil.",
+   get notes(){const N=window.profileFieldCount||17;return N<=15?{"1":"≥ 5 erreurs (absences ou inexactitudes).","2":"3–4 erreurs (absences ou inexactitudes).","3":"1–2 erreurs (absences ou inexactitudes).","4":"0 erreur — tous les champs du profil sont présents et corrects.","N/A":"-"}:{"1":"≥ 7 erreurs (absences ou inexactitudes).","2":"4–6 erreurs (absences ou inexactitudes).","3":"1–3 erreurs (absences ou inexactitudes).","4":"0 erreur — tous les champs du profil sont présents et corrects.","N/A":"-"};}},
   {name:"Impression globale",role:"MR",scale:"1-4",q:"Quelle est votre impression globale ?\nCe CR est-il acceptable pour une utilisation clinique ?",
    notes:{"1":"CR inacceptable : erreurs majeures.","2":"CR nécessitant des corrections importantes.","3":"CR globalement acceptable avec quelques réserves.","4":"CR parfaitement acceptable et prêt pour une utilisation clinique."}},
 ];
@@ -694,6 +694,7 @@ async function loadSubmittedAnswers(idx){
 function renderLeft(){
   const cr=CRS[cur];
   const lines=(cr.profile_text||"").split("\n").filter(Boolean);
+  window.profileFieldCount=lines.length;
   document.getElementById("prof-grid").innerHTML=lines.map(l=>{
     const [k,...rest]=l.split(" : ");
     return `<div class="pk">${k}</div><div class="pv">${rest.join(" : ")}</div>`;

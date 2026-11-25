@@ -809,7 +809,8 @@ async function loadSubmittedAnswers(idx){
 function renderLeft(){
   const cr=CRS[cur];
   const lines=(cr.profile_text||"").split("\n").filter(Boolean);
-  window.profileFieldCount=lines.length;
+  // Correspondance profil → CR : les champs « non renseigné » sont ignorés (règle de la grille)
+  window.profileFieldCount=lines.filter(l=>!/:\s*non renseign/i.test(l)).length;
   document.getElementById("prof-grid").innerHTML=lines.map(l=>{
     const [k,...rest]=l.split(" : ");
     return `<div class="pk">${k}</div><div class="pv">${rest.join(" : ")}</div>`;

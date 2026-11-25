@@ -41,17 +41,25 @@ def delete_all(tid, recs):
     return n
 
 def add_fields(tid):
+    # Lister les champs existants demande le scope schema.bases:read ; s'il manque,
+    # on tente directement la création et on ignore les champs déjà présents.
     meta = requests.get(f"https://api.airtable.com/v0/meta/bases/{BASE_ID}/tables", headers=H).json()
-    if "error" in meta: sys.exit(f"Erreur schéma : {meta['error']} (scope schema.bases:write ?)")
-    table = next(t for t in meta["tables"] if t["id"] == tid)
-    existing = {f["name"] for f in table["fields"]}
+    existing = set()
+    if "error" not in meta:
+        table = next((t for t in meta.get("tables", []) if t["id"] == tid), None)
+        existing = {f["name"] for f in table["fields"]} if table else set()
     added = 0
     for name, ftype, opts in FIELDS_V2:
         if name in existing: continue
         body = {"name": name, "type": ftype, **({"options": opts} if opts else {})}
         r = requests.post(f"https://api.airtable.com/v0/meta/bases/{BASE_ID}/tables/{tid}/fields", headers=H, json=body)
-        if r.status_code not in (200, 201): sys.exit(f"Erreur ajout champ {name} : {r.text}")
-        added += 1
+        if r.status_code in (200, 201):
+            added += 1; print(f"    + {name}")
+            continue
+        err = r.json().get("error", {})
+        if "DUPLICATE" in str(err.get("type", "")) or "already exists" in str(err).lower():
+            continue  # champ déjà présent
+        sys.exit(f"Erreur ajout champ {name} : {err} (scope schema.bases:write et droits « créateur » sur la base ?)")
     return added
 
 counts = {lbl: fetch_all(tid) for lbl, tid in TABLES.items()}

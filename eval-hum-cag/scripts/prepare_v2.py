@@ -21,6 +21,25 @@ if not TOKEN:
     sys.exit("Erreur : définissez AIRTABLE_TOKEN dans l'environnement")
 H = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
 
+import time
+_raw = requests.request
+def _req(method, url, **kw):
+    """Requête avec nouvelles tentatives (proxy Jean Zay parfois capricieux)."""
+    for i in range(6):
+        try:
+            r = _raw(method, url, timeout=30, **kw)
+            time.sleep(0.25)  # limite Airtable : 5 requêtes / s
+            if r.status_code == 429:
+                time.sleep(30); continue
+            return r
+        except requests.exceptions.RequestException as e:
+            print(f"    (réseau : {type(e).__name__}, nouvelle tentative dans {5*(i+1)} s)")
+            time.sleep(5 * (i + 1))
+    sys.exit("Échec réseau répété : relancez le script (il reprend là où il s'est arrêté).")
+requests.get = lambda url, **kw: _req("GET", url, **kw)
+requests.post = lambda url, **kw: _req("POST", url, **kw)
+requests.delete = lambda url, **kw: _req("DELETE", url, **kw)
+
 def fetch_all(tid):
     recs, offset = [], None
     while True:

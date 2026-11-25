@@ -148,38 +148,44 @@ const N_CRS = 5;
 // Critères avec rôle et préfixe Airtable
 const BLOCS = [
   {name:"Réalisme dosimétrique", crit:[
-    {name:"Dose totale",                role:"PM"},
-    {name:"Fractionnement",             role:"PM"},
-    {name:"Technique",                  role:"PM"},
+    {name:"Présence dose / volume",   key:"Prescription - dose par volume",     role:"PM", type:"bin"},
+    {name:"Cohérence prescription",         key:"Prescription - cohérence",           role:"PM"},
+    {name:"Présence étalement",            key:"Étalement - mentionné",              role:"PM", type:"bin"},
+    {name:"Exactitude étalement",            key:"Étalement - cohérence",              role:"PM"},
+    {name:"Présence contraintes OAR",                key:"OAR - mentionnées",                  role:"PM", type:"bin"},
+    {name:"Cohérence contraintes OAR",                  key:"OAR - cohérence",                    role:"PM"},
+    {name:"Présence technique dosim.",     key:"Technique - technique dosimétrique", role:"PM", type:"bin"},
+    {name:"Présence nature faisceaux",     key:"Technique - nature faisceaux",       role:"PM", type:"bin"},
+    {name:"Présence énergie",              key:"Technique - énergie",                role:"PM", type:"bin"},
+    {name:"Cohérence infos techniques",            key:"Technique - cohérence",              role:"PM"},
   ]},
   {name:"Cohérence diagnostique & traitement", crit:[
-    {name:"Volumes cibles",             role:"MR"},
-    {name:"Chirurgie",                  role:"MR"},
-    {name:"Hormonothérapie",            role:"MR"},
+    {name:"Volumes cibles",                       role:"MR"},
+    {name:"Chirurgie",                            role:"MR"},
+    {name:"Hormonothérapie",                      role:"MR"},
   ]},
   {name:"Intégrité", crit:[
-    {name:"Hallucinations dosimétriques",key:"Hall. dosimétriques",role:"PM"},
-    {name:"Hallucinations cliniques",    key:"Hall. cliniques",    role:"MR"},
-    {name:"Contradictions internes",    role:"MR"},
+    {name:"Hallucinations cliniques",     key:"Hall. cliniques",     role:"MR"},
+    {name:"Contradictions internes",                                  role:"MR"},
   ]},
   {name:"Complétude", crit:[
-    {name:"Indication / diagnostic",          role:"MR"},
-    {name:"Contexte thérapeutique",           role:"MR"},
-    {name:"Caractéristiques du traitement",   role:"MR"},
-    {name:"Toxicités (CTCAE)",                role:"MR"},
-    {name:"Bilan de fin",                     role:"MR"},
-    {name:"Suites thérapeutiques",            role:"MR"},
+    {name:"Indication / diagnostic",              role:"MR"},
+    {name:"Contexte thérapeutique",               role:"MR"},
+    {name:"Caractéristiques du traitement",       role:"MR"},
+    {name:"Toxicités (CTCAE)",                    role:"MR"},
+    {name:"Bilan de fin",                         role:"MR"},
+    {name:"Suites thérapeutiques",                role:"MR"},
   ]},
   {name:"Rédaction", crit:[
-    {name:"Terminologie",               role:"PM"},
-    {name:"Organisation",               role:"MR"},
-    {name:"Clarté & Lisibilité",key:"Synthèse & Lisibilité",role:"MR"},
+    {name:"Justesse des termes techniques",       role:"PM"},
+    {name:"Organisation",                         role:"MR"},
+    {name:"Clarté & Lisibilité", key:"Synthèse & Lisibilité", role:"MR"},
   ]},
   {name:"Cohérence", crit:[
-    {name:"Correspondance profil → CR", role:"PM"},
+    {name:"Correspondance profil → CR",           role:"PM"},
   ]},
   {name:"Impression globale", crit:[
-    {name:"Impression globale",         role:"MR"},
+    {name:"Impression globale",                   role:"MR"},
   ]},
 ];
 
@@ -241,7 +247,8 @@ function renderProgress(idx){
   }
 }
 
-function scoreChip(val){
+function scoreChip(val,c){
+  if(c&&c.type==="bin"&&(val===0||val===1)) return `<span class="score ${val?"s4":"sna"}">${val?"Oui":"Non"}</span>`;
   if(val===null||val===undefined) return ``;
   if(val===0||val==="N/A") return `<span class="score sna">N/A</span>`;
   const cls=["","s1","s2","s3","s4"][val]||"";
@@ -271,7 +278,7 @@ function renderTable(ev, dataByEv){
     const f=dataByEv[ev]?.[cr];
     tbody+=`<tr><td>${cr}</td>`;
     for(const c of visCrit){
-      tbody+=`<td>${scoreChip(f?f[fieldKey(c)]:null)}</td>`;
+      tbody+=`<td>${scoreChip(f?f[fieldKey(c)]:null,c)}</td>`;
     }
     const cmt=evRole==="PM"?f?.pm_commentaire||"":f?.mr_commentaire||"";
     tbody+=`<td class="cmt-cell">${cmt}</td></tr>`;
@@ -302,9 +309,8 @@ function switchTab(ev){
 
 
 // ── IAA (Kappa de Fleiss + % accord) ─────────────────────────
-function krippendorffAlpha(ratingsByCR){
-  // Alpha de Krippendorff — distance intervalle d²(k,l)=(k-l)²
-  const cats=[1,2,3,4];
+function krippendorffAlpha(ratingsByCR,cats=[1,2,3,4]){
+  // Alpha de Krippendorff — distance (k-l)² (= nominale pour une question Oui/Non codée 0/1)
   const units=ratingsByCR.filter(rs=>rs.length>=2);
   if(!units.length) return null;
   // Matrice de coïncidences
@@ -375,13 +381,14 @@ function computeIAA(dataByEv){
       // Valeurs avec N/A explicite pour les évaluatrices ayant soumis
       const vals=submitted.map(ev=>{
         const v=dataByEv[ev][cr][key];
+        if(c.type==="bin") return (v===0||v===1)?v:"NA";
         return (v!=null&&v!==0&&v!=="N/A"&&Number.isInteger(v))?v:"NA";
       });
       byCR.push(vals);
       const scores=vals.filter(v=>v!=="NA");
       if(scores.length>=2) byCRscore.push(scores);
     }
-    return {crit:c, kappa:krippendorffAlpha(byCRscore), pct:pctAgree(byCR),
+    return {crit:c, kappa:krippendorffAlpha(byCRscore,c.type==="bin"?[0,1]:[1,2,3,4]), pct:pctAgree(byCR),
             n:byCR.length, nScore:byCRscore.length};
   });
 }
@@ -482,7 +489,7 @@ function renderIAA(dataByEv){
     <div class="iaa-note">
       <strong>Note :</strong> L'Alpha de Krippendorff mesure l'accord entre les 3 évaluatrices, corrigé pour le hasard, sur une échelle ordinale (distance intervalle d²=(k−l)²).
       Le % d'accord est la proportion de paires d'évaluatrices ayant attribué la même note.
-      Le % accord inclut les N/A comme réponse (N/A vs score = désaccord). L'Alpha est calculé sur les scores 1–4 uniquement (distance ordinale). CRs non encore soumis sont exclus. Seuils : α ≥ 0.80 fiable, α ≥ 0.67 acceptable.
+      Le % accord inclut les N/A comme réponse (N/A vs score = désaccord). L'Alpha est calculé sur les scores 1–4 uniquement (distance ordinale). CRs non encore soumis sont exclus. Seuils : α ≥ 0.80 fiable, α ≥ 0.67 acceptable. Questions Oui/Non : Alpha nominal (0/1) ; quand presque toutes les réponses sont identiques, l'Alpha peut être très bas malgré un % d'accord élevé (paradoxe du kappa) : se référer au % d'accord. Les questions de cohérence passées en N/A automatique (question parente = Non) sont exclues de l'Alpha.
     </div>`;
 }
 

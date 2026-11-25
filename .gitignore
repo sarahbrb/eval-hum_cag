@@ -29,3 +29,6 @@ worksf
 .vscode
 .vscode-server
 .wget-hsts
+
+# Sauvegardes Airtable (réponses des évaluateurs, ne pas publier)
+eval-hum-cag/airtable_backups/

@@ -131,6 +131,25 @@ html,body{height:100%;font-family:"Inter",system-ui,sans-serif;font-size:14px;ba
 .crit.done.pm{border-color:var(--pm-border);border-left-color:var(--pm-text)}
 .crit.done.mr{border-color:var(--mr-border);border-left-color:var(--mr-text)}
 .crit.locked{opacity:.5;background:#F1F5F9}
+.crit-group{font-size:.75rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;margin:6px 0 -2px;padding-top:4px}
+.crit-group:not(:first-child){border-top:1px dashed var(--border);padding-top:10px;margin-top:8px}
+.crit.sub{margin-left:18px}
+.crit.gated .rb{opacity:.45;cursor:not-allowed}
+.crit-pending{font-size:.75rem;color:var(--fg3);font-style:italic;margin-top:4px}
+.bin-chip{font-size:.6875rem;font-weight:600;border-radius:4px;padding:1px 7px;background:#F1F5F9;color:var(--fg2);border:1px solid var(--border)}
+.rb.bin{width:52px}
+.rb.on[data-v="Oui"]{background:#15803D;border-color:#15803D;color:#fff}
+.rb.on[data-v="Non"]{background:#64748B;border-color:#64748B;color:#fff}
+.scale-det{margin-top:6px;font-size:.75rem}
+.scale-det summary{cursor:pointer;color:var(--navy);font-weight:600;user-select:none}
+.scale-list{margin-top:6px;display:flex;flex-direction:column;gap:4px}
+.scale-item{display:flex;gap:8px;line-height:1.45;color:var(--fg2)}
+.scale-item b{flex:0 0 30px;color:var(--fg)}
+.method-box{background:#FFFBEB;border:1px solid #F5E061;border-radius:10px;padding:12px 16px;margin:0 0 16px;font-size:.8125rem;line-height:1.55;color:#5B4B00}
+.method-box b{color:#3F3400}
+.method-box ul{margin:6px 0 0 18px;padding:0}
+.btn-edit-cr{margin-left:10px;padding:3px 10px;border:1px solid #1E40AF;border-radius:6px;background:#fff;color:#1E40AF;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer}
+.btn-edit-cr:hover{background:#1E40AF;color:#fff}
 .crit.locked .rb{cursor:not-allowed}
 .crit-main{display:flex;align-items:flex-start;gap:12px}
 .crit-left{flex:1;min-width:0}
@@ -245,6 +264,17 @@ html,body{height:100%;font-family:"Inter",system-ui,sans-serif;font-size:14px;ba
   <div id="dashboard" style="display:none">
     <div class="dash-title" id="dash-title"></div>
     <div class="dash-sub" id="dash-sub"></div>
+    <div class="method-box">
+      <b>📏 Méthode de notation</b>
+      <p style="margin:6px 0 0">Le but n'est <b>pas de compter les erreurs</b>, mais de donner, pour chaque critère, <b>la note la plus représentative</b> (seule exception : « Correspondance profil → CR », où l'interface indique le nombre d'erreurs correspondant à chaque note).</p>
+      <ul>
+        <li><b>1. Parcourir</b> : avant de noter, jetez un œil sur l'ensemble de vos CR pour avoir une idée de l'éventail de qualité.</li>
+        <li><b>2. Comparer</b> : pour chaque critère, comparez les CR entre eux afin de distinguer le meilleur, le moins bon et le mauvais.</li>
+        <li><b>3. Noter</b> : attribuez les notes sur cette base, en vous appuyant sur la description des niveaux (« Description des notes » sous chaque critère). Un CR jugé meilleur qu'un autre ne doit pas avoir une note inférieure. Vous pouvez rouvrir un CR soumis pour ajuster vos notes.</li>
+        <li><b>Règle commune</b> : 4 = rien à redire ; 3 = problème de forme, on comprend sans hésiter ce qui a été fait ; 2 = problème de fond isolé, on reconstitue l'essentiel mais un point reste douteux ; 1 = l'ensemble n'est pas fiable, ou une valeur est cliniquement impossible.<br><b>Question test</b> en cas d'hésitation : « À partir du CR, puis-je reconstituer ce qui a réellement été fait ? » Oui sans hésiter → 4 ou 3 ; oui pour l'essentiel mais avec un doute → 2 ; non → 1.</li>
+        <li><b>Questions Oui / Non</b> : si la réponse est « Non », la question d'évaluation qui suit passe automatiquement en N/A.</li>
+      </ul>
+    </div>
     <div class="cr-grid" id="cr-grid"></div>
   </div>
 
@@ -262,9 +292,7 @@ html,body{height:100%;font-family:"Inter",system-ui,sans-serif;font-size:14px;ba
       <span class="prog-label"><strong id="prog-n">0</strong>/<span id="prog-tot">0</span> critères</span>
       <button class="btn-submit-cr" id="btn-submit-cr" disabled>✓ Soumettre ce CR</button>
     </div>
-    <div id="ro-banner" style="display:none;background:#EFF6FF;border-bottom:1px solid #BFDBFE;padding:8px 20px;font-size:.8125rem;color:#1E40AF;font-weight:600;text-align:center">
-      ✅ CR déjà soumis · consultation en lecture seule, aucune modification possible
-    </div>
+    \1\n      ✅ CR déjà soumis · consultation en lecture seule <button class="btn-edit-cr" id="btn-edit-cr" onclick="enableEdit()">✏️ Modifier mes réponses</button>\n\2
     <div class="panels">
       <div class="pl">
         <div class="pl-sticky">
@@ -339,7 +367,7 @@ const AT_TOKEN="%%AT_TOKEN%%";
 const AT_BASE="appCpDq5UMLxZidBX";
 const AT_TABLE="%%GHM_TABLE_ID%%";
 const AT_URL=`https://api.airtable.com/v0/${AT_BASE}/${AT_TABLE}`;
-const SKEY = "cag_eval_ghm_v1";
+const SKEY = "cag_eval_ghm_v2";
 
 // Evaluator assignments (0-indexed CR indices)
 // ── PHASE PILOTE GHM ── 4 PM + 2 MR cliniciens, 5 CRs
@@ -377,63 +405,142 @@ function getPairedPM(name, crIdx){
 
 // ── Criteria ─────────────────────────────────────────────────
 const CRITERIA = [
-  {name:"Dose totale",role:"PM",scale:"1-4",q:"La dose totale prescrite est-elle cohérente avec les standards ?",
-   notes:{"1":"Dose totale absente ou clairement erronée (l'absence compte comme un 1).","2":"Dose totale présente mais avec une erreur sur la valeur ou l'unité.","3":"Dose totale globalement correcte avec une légère imprécision.","4":"Dose totale parfaitement cohérente avec les standards de radiothérapie."}},
-  {name:"Fractionnement",role:"PM",scale:"1-4",q:"Le nombre de séances et la dose par fraction sont-ils cohérents entre eux ?\n(ex. : 25 × 2 Gy = 50 Gy)",
-   notes:{"1":"Fractionnement absent ou incohérence mathématique évidente (l'absence compte comme un 1).","2":"Fractionnement partiellement correct mais avec une erreur.","3":"Fractionnement globalement correct avec une légère imprécision.","4":"Dose/fraction, nombre de séances et dose totale parfaitement cohérents."}},
-  {name:"Technique",role:"PM",scale:"1-4",q:"La technique utilisée (3D, IMRT, VMAT…) est-elle adaptée à la localisation tumorale décrite ?",
-   notes:{"1":"Technique absente ou clairement inadaptée (l'absence compte comme un 1).","2":"Technique mentionnée mais partiellement incorrecte.","3":"Technique globalement appropriée avec une imprécision mineure.","4":"Technique parfaitement décrite et adaptée au cas clinique."}},
-  {name:"Volumes cibles",role:"MR",scale:"1-4/NA",q:"Les volumes irradiés (sein seul, ganglions, CMI) sont-ils cohérents avec le stade ganglionnaire mentionné dans le CR ?",
+  // ── 1. Réalisme dosimétrique (PM) — grille v2 ──
+  {name:"Présence d'une dose pour chaque volume cible",group:"Prescription du traitement",key:"Prescription - dose par volume",role:"PM",type:"bin",
+   q:"Chaque volume cible mentionné dans le CR a-t-il une dose délivrée ?",
+   notes:{"Oui":"Tous les volumes cibles mentionnés ont une dose délivrée.","Non":"Au moins un volume cible mentionné n'a pas de dose délivrée."}},
+  {name:"Cohérence de la prescription",group:"Prescription du traitement",key:"Prescription - cohérence",role:"PM",scale:"1-4/NA",
+   q:"La dose totale, la dose par séance et le nombre de séances sont-ils cohérents entre eux et correctement exprimés ?\n(termes appropriés, unités correctes, valeurs cohérentes et plausibles)",
+   hint:"<b>Question test</b> : « À partir du CR, puis-je reconstituer ce qui a réellement été fait ? »<br>• Oui, sans hésiter → 4 ou 3 (3 = problème de forme)<br>• Oui pour l'essentiel, mais un point reste douteux → 2<br>• Non : on ne sait pas quelle information croire, ou une valeur est cliniquement impossible → 1<br><br>Évaluez les volumes pour lesquels une dose est mentionnée.",
+   notes:{"1":"Prescription inexploitable : les valeurs sont incompatibles entre elles et on ne sait pas laquelle croire (ex. 50 Gy en 15 séances de 3 Gy), ou une dose est cliniquement impossible.","2":"Point douteux isolé, le reste tient : on reconstitue l'essentiel de la prescription, avec un doute (ex. 50 Gy en 25 séances de 2,5 Gy : deux valeurs concordent, une ne colle pas ; valeur non standard ; unité qui change le sens).","3":"Prescription globalement cohérente. Imprécision de forme (terme approximatif, unité mal notée mais évidente) sans doute sur la prescription réelle.","4":"Prescription cohérente et correctement exprimée : valeurs plausibles et cohérentes entre elles, termes et unités appropriés.","N/A":"Aucune dose mentionnée dans le CR."}},
+  {name:"Présence de l'étalement",group:"Prescription du traitement",key:"Étalement - mentionné",role:"PM",type:"bin",
+   q:"L'étalement calendaire (dates de début et de fin, ou durée du traitement) est-il mentionné ?",
+   notes:{"Oui":"L'étalement est mentionné.","Non":"L'étalement n'est pas mentionné."}},
+  {name:"Exactitude de l'étalement",group:"Prescription du traitement",key:"Étalement - cohérence",role:"PM",scale:"1-4",dep:["Présence de l'étalement"],
+   q:"L'étalement est-il entièrement correct ?\n(dates, durée et rythme compatibles avec le nombre de séances et le schéma de fractionnement, boost séquentiel éventuel compris, et cohérents avec les autres dates du CR)",
+   hint:"<b>Question test</b> : « À partir du CR, puis-je reconstituer ce qui a réellement été fait ? »<br>• Oui, sans hésiter → 4 ou 3 (3 = problème de forme)<br>• Oui pour l'essentiel, mais un point reste douteux → 2<br>• Non : on ne sait pas quelle information croire, ou une valeur est cliniquement impossible → 1<br><br>Référence : 5 séances par semaine en normofractionné ; adapter au schéma décrit (hypofractionnement, schéma à 1 séance par semaine…).",
+   notes:{"1":"Étalement inexploitable ou impossible : fin avant le début, durée incompatible avec le traitement (ex. 25 séances en 4 jours), dates contradictoires entre elles.","2":"Point douteux isolé, le reste est plausible : écart notable avec le nombre de séances ou le schéma (ex. 25 séances sur 3 semaines), rythme inhabituel non justifié, ou une date incohérente avec le reste du CR.","3":"Étalement globalement correct : léger écart explicable (jours fériés, courte interruption) ou imprécision de forme (format de date) sans doute sur la durée réelle.","4":"Étalement entièrement correct : dates valides, durée et rythme compatibles avec le nombre de séances et le schéma de fractionnement, cohérents avec les autres dates du CR."}},
+  {name:"Présence des contraintes OAR",group:"Contraintes aux organes à risque (OAR)",key:"OAR - mentionnées",role:"PM",type:"bin",
+   q:"Le CR mentionne-t-il des contraintes de dose aux organes à risque ?",
+   notes:{"Oui":"Au moins une contrainte OAR avec une valeur chiffrée est mentionnée.","Non":"Aucune contrainte OAR chiffrée n'est mentionnée."}},
+  {name:"Cohérence des contraintes OAR",group:"Contraintes aux organes à risque (OAR)",key:"OAR - cohérence",role:"PM",scale:"1-4",dep:["Présence des contraintes OAR"],
+   q:"Les contraintes mentionnées sont-elles plausibles, avec une métrique et une unité adaptées à l'organe ?",
+   hint:"<b>Question test</b> : « À partir du CR, puis-je reconstituer ce qui a réellement été fait ? »<br>• Oui, sans hésiter → 4 ou 3 (3 = problème de forme)<br>• Oui pour l'essentiel, mais un point reste douteux → 2<br>• Non : on ne sait pas quelle information croire, ou une valeur est cliniquement impossible → 1<br><br>Évaluez uniquement les OAR mentionnés dans le CR : l'absence d'un OAR n'est pas pénalisée ici.",
+   notes:{"1":"Contraintes inexploitables : la plupart sont aberrantes ou exprimées dans des unités absurdes, aucune n'est vraiment utilisable.","2":"Point douteux isolé, les autres contraintes sont plausibles : une valeur peu plausible (ex. V20 poumon très élevé), une métrique inadaptée à l'organe, ou une unité qui change le sens (ex. Dmoy cœur exprimée en %).","3":"Contraintes globalement plausibles. Imprécision de forme (notation approximative) sans doute sur le sens.","4":"Toutes les contraintes mentionnées sont plausibles, avec une métrique et une unité adaptées à l'organe."}},
+  {name:"Présence de la technique dosimétrique",group:"Technique d'irradiation",key:"Technique - technique dosimétrique",role:"PM",type:"bin",
+   q:"La technique dosimétrique est-elle mentionnée ?\n(RC3D, RCMI, VMAT, tomothérapie…)",
+   notes:{"Oui":"La technique dosimétrique est mentionnée.","Non":"La technique dosimétrique n'est pas mentionnée."}},
+  {name:"Présence de la nature des faisceaux",group:"Technique d'irradiation",key:"Technique - nature faisceaux",role:"PM",type:"bin",
+   q:"La nature des faisceaux est-elle mentionnée ?\n(photons, électrons…)",
+   notes:{"Oui":"La nature des faisceaux est mentionnée.","Non":"La nature des faisceaux n'est pas mentionnée."}},
+  {name:"Présence de l'énergie des faisceaux",group:"Technique d'irradiation",key:"Technique - énergie",role:"PM",type:"bin",
+   q:"L'énergie des faisceaux est-elle mentionnée ?",
+   notes:{"Oui":"L'énergie des faisceaux est mentionnée.","Non":"L'énergie des faisceaux n'est pas mentionnée."}},
+  {name:"Cohérence des informations techniques",group:"Technique d'irradiation",key:"Technique - cohérence",role:"PM",scale:"1-4",dep:["Présence de la technique dosimétrique","Présence de la nature des faisceaux","Présence de l'énergie des faisceaux"],
+   q:"Les informations techniques mentionnées sont-elles cohérentes entre elles et avec le traitement décrit ?",
+   hint:"<b>Question test</b> : « À partir du CR, puis-je reconstituer ce qui a réellement été fait ? »<br>• Oui, sans hésiter → 4 ou 3 (3 = problème de forme)<br>• Oui pour l'essentiel, mais un point reste douteux → 2<br>• Non : on ne sait pas quelle information croire, ou une valeur est cliniquement impossible → 1",
+   notes:{"1":"Description technique non crédible dans son ensemble : on ne peut pas savoir comment le traitement a été délivré (ex. « VMAT en électrons de 50 MV » : technique, nature et énergie incompatibles entre elles).","2":"Point douteux isolé, le reste est cohérent : une incompatibilité (ex. électrons de 6 MV, énergie hors des plages cliniques, boost intégré (SIB) annoncé sans deux niveaux de dose).","3":"Éléments compatibles, avec une imprécision de forme (technique nommée de façon approximative, énergie sans unité mais évidente).","4":"Éléments compatibles entre eux et avec le traitement décrit."}},
+  {name:"Volumes cibles",role:"MR",scale:"1-4/NA",q:"Les volumes irradiés (sein seul, paroi, aires ganglionnaires, CMI) sont-ils cohérents avec le stade ganglionnaire mentionné dans le CR ?",
    notes:{"1":"Volumes clairement inappropriés au stade.","2":"Volumes partiellement adaptés avec des omissions importantes.","3":"Volumes globalement adaptés avec une imprécision mineure.","4":"Volumes cibles parfaitement cohérents avec le stade et la chirurgie.","N/A":"Stade ganglionnaire non mentionné."}},
-  {name:"Chirurgie",role:"MR",scale:"1-4/NA",q:"La chirurgie préalable (tumorectomie vs mastectomie) est-elle mentionnée et cohérente avec le traitement décrit ?",
-   notes:{"1":"Chirurgie absente ou contradictoire.","2":"Chirurgie mentionnée mais avec des incohérences.","3":"Chirurgie mentionnée et globalement cohérente.","4":"Chirurgie clairement identifiée et parfaitement cohérente.","N/A":"Chirurgie non réalisée ou non applicable."}},
+  {name:"Chirurgie",role:"MR",scale:"1-4/NA",q:"La chirurgie (geste mammaire ET geste ganglionnaire) est-elle mentionnée et cohérente avec le traitement décrit ?",
+   hint:"Vérifier aussi le geste ganglionnaire (ganglion sentinelle, curage axillaire).",
+   notes:{"1":"Chirurgie absente ou contradictoire avec le traitement (ex. mastectomie + irradiation du sein entier).","2":"Chirurgie incomplète (ex. geste ganglionnaire non mentionné) ou partiellement incohérente avec le traitement.","3":"Chirurgie identifiée (geste mammaire et ganglionnaire) et cohérente, avec une imprécision mineure.","4":"Chirurgie clairement identifiée (geste mammaire et geste ganglionnaire) et parfaitement cohérente avec les volumes irradiés.","N/A":"Chirurgie non réalisée ou non applicable."}},
   {name:"Hormonothérapie",role:"MR",scale:"1-4/NA",q:"Si mentionnée, l'hormonothérapie adjuvante est-elle appropriée au statut des récepteurs hormonaux (ER/PR) indiqué dans le CR ?",
    notes:{"1":"Hormonothérapie prescrite pour un CR ER−/PR− ou absente pour ER+/PR+.","2":"Hormonothérapie partiellement appropriée.","3":"Hormonothérapie globalement adaptée avec une imprécision.","4":"Hormonothérapie parfaitement adaptée au statut ER/PR et à la ménopause.","N/A":"Hormonothérapie non applicable dans ce cas."}},
-  {name:"Hallucinations dosimétriques",key:"Hall. dosimétriques",role:"PM",scale:"1-4",q:"Dans quelle mesure le CR est-il exempt de valeurs physiquement impossibles ou de techniques inexistantes ?\n(énergie inconnue, dose hors plage clinique, technique non reconnue)",
-   notes:{"1":"Plusieurs hallucinations dosimétriques majeures.","2":"Une hallucination dosimétrique significative.","3":"Légère imprécision dosimétrique sans impact clinique majeur.","4":"Aucune hallucination dosimétrique détectée."}},
-  {name:"Hallucinations cliniques",key:"Hall. cliniques",role:"MR",scale:"1-4",q:"Dans quelle mesure le CR est-il exempt de protocoles inexistants, de médicaments inconnus ou d'associations thérapeutiques impossibles ?",
-   notes:{"1":"Plusieurs hallucinations cliniques majeures.","2":"Une hallucination clinique significative.","3":"Légère incohérence clinique sans impact majeur.","4":"Aucune hallucination clinique détectée."}},
-  {name:"Contradictions internes",role:"MR",scale:"1-4",q:"Dans quelle mesure le CR est-il exempt de contradictions internes ?\n(ex. : mastectomie décrite mais irradiation partielle du sein ; dates incohérentes)",
-   notes:{"1":"Contradictions majeures rendant le CR incohérent.","2":"Une contradiction significative.","3":"Légère contradiction sans impact clinique majeur.","4":"Aucune contradiction interne détectée."}},
-  {name:"Indication / diagnostic",role:"MR",scale:"1-4",q:"Le CR contient-il le diagnostic complet : stade TNM, type histologique et sous-type moléculaire ?",
-   notes:{"1":"Diagnostic absent ou totalement inexploitable.","2":"Diagnostic partiellement présent.","3":"Diagnostic globalement présent avec un élément manquant.","4":"Diagnostic complet : stade TNM, type histologique et sous-type moléculaire."}},
-  {name:"Contexte thérapeutique",role:"MR",scale:"1-4",q:"La chirurgie préalable et la décision de RCP sont-elles mentionnées ?",
-   notes:{"1":"Contexte totalement absent.","2":"Contexte partiellement mentionné.","3":"Contexte globalement présent avec une imprécision.","4":"Contexte thérapeutique complet et cohérent."}},
-  {name:"Caractéristiques du traitement",role:"MR",scale:"1-4",q:"Les dates, la technique, les volumes cibles et les doses totales sont-ils tous renseignés ?",
-   notes:{"1":"Caractéristiques absentes ou erronées.","2":"Caractéristiques partiellement présentes.","3":"Caractéristiques globalement présentes avec une imprécision.","4":"Caractéristiques complètes et correctes."}},
+  {name:"Hallucinations cliniques",key:"Hall. cliniques",role:"MR",scale:"1-4",q:"Le CR est-il exempt d'informations inventées ?\n(protocole, médicament, examen ou classification inexistants, association thérapeutique impossible)",
+   hint:"Hallucination = invention (quelque chose qui n'existe pas). Deux informations qui se contredisent relèvent du critère « Contradictions internes ».",
+   notes:{"1":"Inventions qui rendent le CR non crédible cliniquement.","2":"Une invention isolée (ex. médicament inexistant), le reste du CR est crédible.","3":"Imprécision clinique (nom ou terme approximatif) sans invention franche.","4":"Aucune invention : tous les traitements, médicaments, examens et classifications existent et sont plausibles."}},
+  {name:"Contradictions internes",role:"MR",scale:"1-4",q:"Le CR est-il exempt de contradictions internes ?\n(au moins deux informations du CR qui s'opposent)",
+   hint:"Une contradiction = deux informations (ou plus) du CR qui s'opposent. Une erreur isolée, que rien d'autre dans le CR ne contredit, n'est pas une contradiction.",
+   notes:{"1":"Contradictions qui rendent le CR non fiable : on ne sait plus quelles informations croire.","2":"Contradiction isolée : deux informations s'opposent, mais le reste du CR est cohérent.","3":"Légère discordance de formulation, sans contradiction réelle sur le fond.","4":"Aucune contradiction : toutes les informations du CR sont compatibles entre elles."}},
+  {name:"Indication / diagnostic",role:"MR",scale:"1-4",q:"Le diagnostic est-il présent, complet et cohérent ?\n(TNM, stade tumoral, type histologique, grade SBR, nombre de ganglions, sous-type moléculaire)",
+   hint:"Cohérence : les éléments doivent être compatibles entre eux (ex. N0 avec 3 ganglions envahis, ou « Luminal A » avec HER2+ = incohérence).",
+   notes:{"1":"Diagnostic absent ou inexploitable : la plupart des éléments manquent, ou ils se contredisent au point qu'on ne sait pas de quel cancer il s'agit.","2":"Diagnostic incomplet ou douteux : plusieurs éléments importants manquent, ou un élément est incohérent avec le reste (ex. N0 avec 3 ganglions envahis).","3":"Diagnostic globalement complet et cohérent : un élément secondaire manque ou est imprécis, sans doute sur le diagnostic.","4":"Diagnostic complet et cohérent : tous les éléments attendus sont présents et compatibles entre eux."}},
+  {name:"Contexte thérapeutique",role:"MR",scale:"1-4",q:"Les éléments du contexte thérapeutique sont-ils mentionnés ?\n(date de la chirurgie, geste chirurgical, décision de RCP)",
+   hint:"Présence uniquement (la cohérence de la chirurgie est évaluée dans le critère « Chirurgie »). Les champs de modèle entre crochets (ex. [date], [nom du médecin]) sont volontairement laissés vides : ils comptent comme présents et ne sont pas pénalisés.",
+   notes:{"1":"Aucun élément du contexte thérapeutique n'est mentionné.","2":"Un seul élément sur trois est mentionné.","3":"Deux éléments sur trois sont mentionnés.","4":"Les trois éléments (date de la chirurgie, geste chirurgical, décision de RCP) sont mentionnés."}},
+  {name:"Caractéristiques du traitement",role:"MR",scale:"1-4",q:"Les 4 éléments clés du traitement sont-ils renseignés ?\n(dates de traitement, technique d'irradiation, volumes cibles, doses totales)",
+   hint:"Présence uniquement : la cohérence est évaluée par les physiciens. Des dates sous forme de champ de modèle (ex. [date de début]) comptent comme présentes.",
+   notes:{"1":"Au plus 1 élément sur 4 est renseigné.","2":"2 éléments sur 4 sont renseignés.","3":"3 éléments sur 4 sont renseignés.","4":"Les 4 éléments (dates, technique, volumes, doses totales) sont renseignés."}},
   {name:"Toxicités (CTCAE)",role:"MR",scale:"1-4",q:"Les effets indésirables sont-ils décrits et gradés selon la classification CTCAE ?",
    notes:{"1":"Aucune toxicité mentionnée ou description totalement incorrecte.","2":"Toxicités partiellement décrites.","3":"Toxicités globalement bien décrites avec une imprécision.","4":"Toxicités complètes et correctement graduées selon CTCAE."}},
-  {name:"Bilan de fin",role:"MR",scale:"1-4",q:"Le bilan de fin de traitement (score OMS, poids, toxicités résiduelles) est-il présent ?",
-   notes:{"1":"Bilan absent.","2":"Bilan partiellement présent.","3":"Bilan globalement présent avec des éléments manquants.","4":"Bilan de fin complet et cohérent."}},
-  {name:"Suites thérapeutiques",role:"MR",scale:"1-4",q:"Le plan de suivi, l'hormonothérapie adjuvante et le rythme de surveillance sont-ils précisés ?",
-   notes:{"1":"Aucune suite thérapeutique mentionnée.","2":"Suites partiellement mentionnées.","3":"Suites globalement détaillées avec un élément incomplet.","4":"Plan de suivi complet et hormonothérapie adjuvante précisés."}},
-  {name:"Terminologie",role:"PM",scale:"1-4",q:"Le vocabulaire radiothérapeutique français est-il correct et standard ?\n(fractionnement, dosimétrie, champs tangentiels…)",
-   notes:{"1":"Terminologie largement incorrecte.","2":"Quelques erreurs terminologiques importantes.","3":"Terminologie globalement correcte avec quelques imprécisions.","4":"Vocabulaire radiothérapeutique précis et standardisé."}},
-  {name:"Organisation",role:"MR",scale:"1-4",q:"Le CR suit-il une structure logique et claire ? Les informations sont-elles présentées dans un ordre cohérent ?\n(contexte → diagnostic → traitement → suivi)",
-   notes:{"1":"Structure absente ou chaotique.","2":"Structure partielle, plusieurs sections désordonnées.","3":"Structure globalement logique avec quelques éléments mal positionnés.","4":"Structure claire et logique."}},
+  {name:"Bilan de fin",role:"MR",scale:"1-4",q:"Le bilan de fin de traitement est-il présent et correct ?\n(état général : score OMS ou indice de Karnofsky, poids, toxicités résiduelles)",
+   hint:"État général : soit score OMS (chiffre de 0 à 5), soit indice de Karnofsky (en %). Un score OMS exprimé en % = imprécision de forme (→ 3).",
+   notes:{"1":"Bilan de fin absent ou inexploitable.","2":"Bilan très incomplet (un seul élément sur trois), ou un élément incorrect sur le fond (ex. score OMS de 7, poids invraisemblable).","3":"Bilan complet avec une imprécision de forme (ex. score OMS exprimé en %), ou deux éléments sur trois présents et corrects.","4":"Bilan complet et correct : état général (OMS 0–5 ou Karnofsky en %), poids et toxicités résiduelles renseignés et correctement exprimés."}},
+  {name:"Suites thérapeutiques",role:"MR",scale:"1-4",q:"Les suites thérapeutiques sont-elles mentionnées ?\n(rythme de surveillance, examens prévus, hormonothérapie adjuvante si indiquée)",
+   hint:"Présence uniquement. L'hormonothérapie n'est attendue que si elle est indiquée (tumeur RH+).",
+   notes:{"1":"Aucune suite thérapeutique mentionnée.","2":"Plusieurs éléments attendus manquent (une mention isolée ou vague).","3":"Un élément attendu manque.","4":"Tous les éléments attendus sont mentionnés."}},
+  {name:"Justesse des termes techniques",role:"PM",scale:"1-4",
+   q:"Les termes techniques employés dans le CR sont-ils justes et adaptés au contexte de la radiothérapie ?",
+   hint:"Ne pas évaluer ici : la syntaxe, les accords, le style (→ critère Clarté & Lisibilité), ni les unités et les valeurs (→ critères de cohérence du bloc 1). Exemples de termes non justes : anglicisme là où un équivalent français est d'usage (« CRT »), terme impropre (« dose moyenne » au lieu de « dose prescrite »), terme employé dans un mauvais sens, terme inventé.",
+   notes:{"1":"Termes techniques largement inexacts ou inadaptés : le CR ne paraît pas rédigé par un professionnel de radiothérapie.","2":"Plusieurs termes impropres ou mal employés, ou un terme qui crée un doute sur ce qui est décrit.","3":"Termes globalement justes. Quelques choix maladroits ou inhabituels qu'un professionnel n'aurait pas faits, sans aucun doute sur le sens.","4":"Tous les termes techniques sont justes et employés à bon escient : un professionnel aurait pu les écrire tels quels."}},
+  {name:"Organisation",role:"MR",scale:"1-4",q:"Le CR suit-il une structure logique ? Les informations sont-elles regroupées et présentées dans un ordre cohérent ?\n(contexte / diagnostic → indication → traitement → tolérance → bilan de fin → suites)",
+   hint:"Structure uniquement : le style et la fluidité relèvent du critère « Clarté & Lisibilité ».",
+   notes:{"1":"Absence de structure : informations mélangées, impossible de suivre la prise en charge.","2":"Structure partiellement désordonnée : des informations dispersées ou hors de leur section, il faut chercher pour retrouver l'essentiel.","3":"Structure globalement logique : une information mal placée ou une section peu délimitée, sans gêne pour retrouver l'information.","4":"Structure claire et logique : chaque information est à sa place, l'ordre suit le déroulement de la prise en charge.","N/A":"-"}},
   {name:"Clarté & Lisibilité",key:"Synthèse & Lisibilité",role:"MR",scale:"1-4",q:"Le texte est-il fluide, concis et adapté au style médical ?\n(lisibilité, concision, absence de répétitions)",
+   hint:"Les champs entre crochets (ex. [date], [nom du médecin]) sont des champs de modèle, volontairement laissés vides : ne pas en tenir compte dans l'évaluation de la lisibilité.",
    notes:{"1":"Texte illisible ou clairement non médical.","2":"Texte compréhensible mais avec des maladresses stylistiques.","3":"Texte globalement bien rédigé avec quelques légères imperfections.","4":"Texte naturel, fluide et parfaitement adapté."}},
-  {name:"Correspondance profil → CR",role:"PM",scale:"1-4",q:"Les informations du CR (stade, chirurgie, ER/PR, chimiothérapie…) correspondent-elles aux données du profil patient fourni ?\n⚠ Nécessite d'avoir le profil patient sous les yeux.",
-   hint:"Le profil peut être mentionné de façon reformulée (et non repris mot pour mot) : cela est considéré comme correct.",
-   notes:{"1":"Contradictions majeures entre le profil et le CR.","2":"Contradictions partielles importantes.","3":"Globalement cohérent avec quelques divergences mineures.","4":"Parfaite cohérence entre le profil et le CR.","N/A":"Impossible à évaluer."}},
+  {name:"Correspondance profil → CR",role:"PM",scale:"1-4",q:"Les champs du profil patient sont-ils présents ET corrects dans le CR ?\n⚠ Avoir le profil patient sous les yeux. Direction Profil → CR uniquement.\nErreur = absence d'un champ attendu OU valeur incorrecte.\nChimio/Hormono \"non\" : absence dans le CR acceptée. Reformulation acceptée.\nEx. : profil \"positifs\" → CR \"ER+\" ✓ ; profil \"négatifs\" → CR \"HER2−\" ✓",
+   hint:"Compter le nombre d'erreurs (absences + inexactitudes) parmi les champs du profil. Le nombre d'erreurs correspondant à chaque note est calculé ci-dessous pour ce profil.",
+   get notes(){return correspNotes(window.profileFieldCount||17);}},
   {name:"Impression globale",role:"MR",scale:"1-4",q:"Quelle est votre impression globale ?\nCe CR est-il acceptable pour une utilisation clinique ?",
    notes:{"1":"CR inacceptable : erreurs majeures.","2":"CR nécessitant des corrections importantes.","3":"CR globalement acceptable avec quelques réserves.","4":"CR parfaitement acceptable et prêt pour une utilisation clinique."}},
 ];
 
 const BLOCS = [
-  {name:"Réalisme dosimétrique",              range:[0,2]},
-  {name:"Cohérence diagnostique & traitement",range:[3,5]},
-  {name:"Intégrité",                          range:[6,8]},
-  {name:"Complétude",                         range:[9,14]},
-  {name:"Rédaction",                          range:[15,17]},
-  {name:"Cohérence",                          range:[18,18]},
-  {name:"Impression globale",                 range:[19,19]},
+  {name:"1. Réalisme dosimétrique",          range:[0,9]},
+  {name:"2. Cohérence diag. & traitement",   range:[10,12]},
+  {name:"3. Intégrité",                      range:[13,14]},
+  {name:"4. Complétude",                     range:[15,20]},
+  {name:"5. Rédaction",                      range:[21,23]},
+  {name:"6. Cohérence",                      range:[24,24]},
+  {name:"7. Impression globale",             range:[25,25]},
 ];
 
-const SCALE_LABELS = {"1":"Pas du tout","2":"Partiellement","3":"Globalement","4":"Complètement","N/A":"N/A"};
+const SCALE_LABELS = {"1":"Pas du tout","2":"Partiellement","3":"Globalement","4":"Complètement","N/A":"N/A","Oui":"Oui","Non":"Non"};
+
+// ── Grille v2 : helpers (questions Oui/Non, questions conditionnelles) ──
+// depState : "open" (au moins un parent = Oui), "na" (tous les parents = Non → N/A automatique),
+//            "pending" (parent(s) pas encore répondu(s)).
+function depState(c,d){
+  if(!c.dep) return "open";
+  const vals=c.dep.map(p=>d[p]);
+  if(vals.some(v=>v==="Oui")) return "open";
+  if(vals.every(v=>v==="Non")) return "na";
+  return "pending";
+}
+// Valeur effective d'un critère (N/A automatique si la question parente = Non)
+function effVal(c,d){
+  const st=depState(c,d);
+  if(st==="na") return "N/A";
+  if(st==="pending") return null;
+  return d[c.name]!=null?d[c.name]:null;
+}
+function critVals(c){
+  if(c.type==="bin") return ["Oui","Non"];
+  return c.scale==="1-4/NA"?["1","2","3","4","N/A"]:["1","2","3","4"];
+}
+// Correspondance profil → CR : seuils calculés à partir du nombre réel de champs du profil
+// 4 = 0 erreur ; 3 = ≤ 15 % ; 2 = > 15 % et ≤ 30 % ; 1 = > 30 %
+function correspNotes(N){
+  const a=Math.max(1,Math.floor(N*0.15)), b=Math.max(a+1,Math.floor(N*0.30));
+  const rg=(x,y)=>x===y?`${x} erreur${x>1?"s":""}`:`${x}–${y} erreurs`;
+  return {
+    "1":`≥ ${b+1} erreurs (> 30 % des ${N} champs du profil).`,
+    "2":`${rg(a+1,b)} (> 15 % et ≤ 30 % des ${N} champs du profil).`,
+    "3":`${rg(1,a)} (≤ 15 % des ${N} champs du profil).`,
+    "4":`0 erreur : tous les champs du profil sont présents et corrects.`,
+    "N/A":"-"};
+}
+// Valeur Airtable → valeur interface
+function fromAT(c,v){
+  if(c.type==="bin"){ if(v===1||v==="1") return "Oui"; if(v===0||v==="0") return "Non"; return null; }
+  if(v==null) return (c.scale==="1-4/NA"&&!c.dep)?"N/A":null;
+  return String(v);
+}
 
 // ── State ─────────────────────────────────────────────────────
-const SKEY_MAIN = "cag_eval_ghm_v1";
+const SKEY_MAIN = "cag_eval_ghm_v2";
 const CODES = {
   "Sophie":              "UIG814",
   "Estelle":             "OPD658",
@@ -585,7 +692,7 @@ function crStatus(idx){
   if(submittedCRs[idx]) return "done";
   const d=ratings[idx]||{};
   const mine=myRoleCrit();
-  const done=mine.filter(c=>d[c.name]!=null).length;
+  const done=mine.filter(c=>effVal(c,d)!=null).length;
   if(done>0) return "progress";
   return "none";
 }
@@ -630,7 +737,7 @@ function showDashboard(fromSync=false){
     const isOverlap=evalRole==="ALL"||(evalRole==="PM"&&OVERLAP_PM.has(idx))||(evalRole==="MR"&&OVERLAP_MR.has(idx));
     card.innerHTML=`<div class="cr-card-id">CR-${String(idx+1).padStart(2,"0")}${isOverlap?' <span title="CR commun IAA">⭐</span>':""}</div>
       <div class="cr-card-name">${nameVal}</div>
-      <div class="cr-card-status">${submitted?"✅ Soumis":st==="progress"?"🟡 En cours":"⬜ Non commencé"}</div>`;
+      <div class="cr-card-status">${submitted?"✅ Soumis · modifiable":st==="progress"?"🟡 En cours":"⬜ Non commencé"}</div>`;
     card.addEventListener("click",()=>openCR(idx, submitted));
     grid.appendChild(card);
   }
@@ -648,10 +755,20 @@ async function openCR(idx, readOnly=false){
   document.getElementById("cr-title-prof").textContent=num;
   document.getElementById("ro-banner").style.display=readOnly?"block":"none";
   document.getElementById("btn-submit-cr").style.display=readOnly?"none":"";
+  document.getElementById("btn-submit-cr").textContent=submittedCRs[idx]?"✓ Re-soumettre ce CR":"✓ Soumettre ce CR";
   if(readOnly && !ratings[idx]){
     await loadSubmittedAnswers(idx);
   }
   renderLeft();
+  renderRight();
+}
+
+async function enableEdit(){
+  if(!ratings[cur]) await loadSubmittedAnswers(cur);
+  readOnlyMode=false;
+  document.getElementById("ro-banner").style.display="none";
+  const b=document.getElementById("btn-submit-cr");
+  b.style.display=""; b.textContent="✓ Re-soumettre ce CR";
   renderRight();
 }
 
@@ -672,7 +789,7 @@ async function loadSubmittedAnswers(idx){
     for(const c of cList){
       const prefix=c.role==="PM"?"pm_":"mr_";
       const v=f[prefix+(c.key||c.name)];
-      if(v!=null) d[c.name]=String(v);
+      const uv=fromAT(c,v); if(uv!=null) d[c.name]=uv;
     }
     if(f.pm_commentaire) d._cmt_pm=f.pm_commentaire;
     if(f.mr_commentaire) d._cmt_mr=f.mr_commentaire;
@@ -683,6 +800,7 @@ async function loadSubmittedAnswers(idx){
 function renderLeft(){
   const cr=CRS[cur];
   const lines=(cr.profile_text||"").split("\n").filter(Boolean);
+  window.profileFieldCount=lines.length;
   document.getElementById("prof-grid").innerHTML=lines.map(l=>{
     const [k,...rest]=l.split(" : ");
     return `<div class="pk">${k}</div><div class="pv">${rest.join(" : ")}</div>`;
@@ -699,40 +817,54 @@ function md(txt){
 function renderRight(){
   const d=ratings[cur]||{};
   const vis=myCrit();
+  const scrollEl=document.getElementById("criteria-container");
+  const keepScroll=scrollEl?scrollEl.scrollTop:0;
   let html="";
   for(const bloc of BLOCS){
     const [s,e]=bloc.range;
     const bCrits=CRITERIA.slice(s,e+1).filter(c=>vis.includes(c));
     if(!bCrits.length) continue;
-    const done=bCrits.filter(c=>d[c.name]!=null).length;
+    const done=bCrits.filter(c=>effVal(c,d)!=null).length;
     html+=`<div class="bloc"><div class="bloc-hdr"><span class="bloc-name">${bloc.name}</span><span class="bloc-cnt">${done}/${bCrits.length}</span></div><div class="bloc-body">`;
+    let prevGroup=null;
     for(const c of bCrits){
-      const vals=c.scale==="1-4/NA"?["1","2","3","4","N/A"]:["1","2","3","4"];
-      const val=d[c.name];
-      const noteText=val!=null?(c.notes[val]||""):"";
-      const noteLbl=val!=null?(SCALE_LABELS[val]||""):"";
+      if(c.group&&c.group!==prevGroup) html+=`<div class="crit-group">${c.group}</div>`;
+      prevGroup=c.group||null;
+      const st=depState(c,d);
+      const val=effVal(c,d);
+      const vals=critVals(c);
+      const notes=c.notes;
       const isLocked=evalRole!=="ALL"&&c.role!==evalRole;
-      html+=`<div class="crit ${c.role.toLowerCase()}${val!=null?" done":""}${isLocked?" locked":""}" id="crit-${c.name.replace(/[^a-z0-9]/gi,'_')}">
+      const gated=st!=="open";
+      const noteText=val!=null?(st==="na"?"N/A automatique : la question précédente a reçu la réponse « Non ».":(notes[val]||"")):"";
+      const noteLbl=val!=null?(SCALE_LABELS[val]||""):"";
+      const dis=isLocked||readOnlyMode||gated;
+      const scaleList=c.type==="bin"?"":`<details class="scale-det"><summary>Description des notes</summary><div class="scale-list">${vals.filter(v=>notes[v]&&notes[v]!=="-").map(v=>`<div class="scale-item" data-v="${v}"><b>${v}</b><span>${notes[v]}</span></div>`).join("")}</div></details>`;
+      html+=`<div class="crit ${c.role.toLowerCase()}${c.dep?" sub":""}${val!=null?" done":""}${isLocked?" locked":""}${gated?" gated":""}" id="crit-${c.name.replace(/[^a-z0-9]/gi,'_')}">
         <div class="crit-main">
           <div class="crit-left">
             <div class="crit-top">
               <span class="crit-name">${c.name}</span>
               <span class="role-chip ${c.role.toLowerCase()}">${c.role}</span>
+              ${c.type==="bin"?`<span class="bin-chip">Oui / Non</span>`:""}
               ${isLocked?`<span class="lock-badge">🔒 réservé ${c.role}</span>`:""}
             </div>
             <div class="crit-q">${c.q}</div>
             ${c.hint?`<div class="crit-hint">ℹ️ ${c.hint}</div>`:""}
+            ${st==="pending"?`<div class="crit-pending">↑ Répondez d'abord à la question précédente.</div>`:""}
+            ${scaleList}
           </div>
           <div class="rrow">
-            ${vals.map(v=>`<button class="rb${val===v?" on":""}" data-v="${v}" ${isLocked||readOnlyMode?"disabled":""} onclick='rate(${JSON.stringify(c.name)},"${v}")'>${v}</button>`).join("")}
+            ${vals.map(v=>`<button class="rb${c.type==="bin"?" bin":""}${val===v?" on":""}" data-v="${v}" ${dis?"disabled":""} onclick='rate(${JSON.stringify(c.name).replace(/'/g,"&#39;")},"${v}")'>${v}</button>`).join("")}
           </div>
         </div>
-        ${val!=null?`<div class="note-desc" data-v="${val}"><b>${val} · ${noteLbl}</b> · ${noteText}</div>`:""}
+        ${val!=null?`<div class="note-desc" data-v="${val}"><b>${val} · ${noteLbl}</b> : ${noteText}</div>`:""}
       </div>`;
     }
     html+="</div></div>";
   }
   document.getElementById("criteria-area").innerHTML=html;
+  if(scrollEl) scrollEl.scrollTop=keepScroll;
   const d2=ratings[cur]||{};
   document.getElementById("cmt-pm").value=(d2._cmt_pm||"");
   document.getElementById("cmt-mr").value=(d2._cmt_mr||"");
@@ -743,34 +875,16 @@ function renderRight(){
 
 function rate(cname,val){
   const crit=CRITERIA.find(c=>c.name===cname);
-  if(crit&&evalRole!=="ALL"&&crit.role!==evalRole) return;
+  if(!crit||readOnlyMode) return;
+  if(evalRole!=="ALL"&&crit.role!==evalRole) return;
   if(!ratings[cur]) ratings[cur]={};
   const d=ratings[cur];
+  if(depState(crit,d)!=="open") return;
   if(d[cname]===val){delete d[cname];}else{d[cname]=val;}
+  // Une question conditionnelle passée en N/A automatique perd sa note précédente
+  for(const c of CRITERIA){ if(c.dep&&c.dep.includes(cname)&&depState(c,d)==="na") delete d[c.name]; }
   save();
-  const id="crit-"+cname.replace(/[^a-z0-9]/gi,'_');
-  const el=document.getElementById(id);
-  if(el){
-    const v=d[cname];
-    const role=crit.role.toLowerCase();
-    el.className=`crit ${role}`+(v!=null?" done":"");
-    el.querySelectorAll(".rb").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
-    let nd=el.querySelector(".note-desc");
-    if(v!=null){
-      const noteText=crit.notes[v]||"";
-      const noteLbl=SCALE_LABELS[v]||"";
-      if(!nd){nd=document.createElement("div");nd.className="note-desc";el.appendChild(nd);}
-      nd.dataset.v=v;
-      nd.innerHTML=`<b>${v} · ${noteLbl}</b> · ${noteText}`;
-    } else if(nd){nd.remove();}
-    const bEl=el.closest(".bloc-body");
-    if(bEl){
-      const bCrits=[...bEl.querySelectorAll(".crit")];
-      const done=bCrits.filter(b=>b.classList.contains("done")).length;
-      bEl.closest(".bloc").querySelector(".bloc-cnt").textContent=`${done}/${bCrits.length}`;
-    }
-  }
-  updateProg();
+  renderRight();
 }
 
 function saveCmt(who){
@@ -785,7 +899,7 @@ function saveCmt(who){
 function updateProg(){
   const d=ratings[cur]||{};
   const mine=myRoleCrit();
-  const done=mine.filter(c=>d[c.name]!=null).length;
+  const done=mine.filter(c=>effVal(c,d)!=null).length;
   document.getElementById("prog-n").textContent=done;
   document.getElementById("prog-tot").textContent=mine.length;
   if(readOnlyMode) return;
@@ -848,7 +962,7 @@ async function atSubmitByPM(crId,pmEval,fields){
 async function submitCR(){
   const mine=myRoleCrit();
   const d=ratings[cur]||{};
-  const missing=mine.filter(c=>d[c.name]==null).length;
+  const missing=mine.filter(c=>effVal(c,d)==null).length;
   if(missing>0){alert(`${missing} critère(s) manquant(s). Complétez avant de soumettre.`);return;}
 
   document.getElementById("overlay-icon").textContent="⏳";
@@ -867,8 +981,8 @@ async function submitCR(){
   if(evalRole==="ALL"){
     // Rôle pilote : 1 record unique avec tous les champs PM + MR
     const fields={cr_id:crId,statut:"Complet",pm_evaluateur:evalName,pm_timestamp:ts,mr_evaluateur:evalName,mr_timestamp:ts,pm_commentaire:d._cmt_pm||"",mr_commentaire:d._cmt_mr||""};
-    for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+(c.key||c.name)]=toNum(d[c.name]);
-    for(const c of CRITERIA.filter(x=>x.role==="MR")) fields["mr_"+(c.key||c.name)]=toNum(d[c.name]);
+    for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+(c.key||c.name)]=toNum(effVal(c,d));
+    for(const c of CRITERIA.filter(x=>x.role==="MR")) fields["mr_"+(c.key||c.name)]=toNum(effVal(c,d));
     ok=await atSubmit(crId,evalName,fields);
   } else if(evalRole==="PM"){
     const pairedMRs=getPairedMRs(evalName,cur);
@@ -881,21 +995,21 @@ async function submitCR(){
         statut=existing?.fields?.mr_evaluateur?"Complet":"PM_fait";
       }
       const fields={cr_id:crId,statut,pm_evaluateur:evalName,pm_timestamp:ts,mr_evaluateur:mrName,pm_commentaire:d._cmt_pm||""};
-      for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+(c.key||c.name)]=toNum(d[c.name]);
+      for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+(c.key||c.name)]=toNum(effVal(c,d));
       const s=await atSubmit(crId,mrName,fields);
       if(s) sent++;
     }
     ok=(sent===pairedMRs.length||pairedMRs.length===0);
     if(pairedMRs.length===0){
       const fields={cr_id:crId,statut:"PM_fait",pm_evaluateur:evalName,pm_timestamp:ts,mr_evaluateur:"",pm_commentaire:d._cmt_pm||""};
-      for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+(c.key||c.name)]=toNum(d[c.name]);
+      for(const c of CRITERIA.filter(x=>x.role==="PM")) fields["pm_"+(c.key||c.name)]=toNum(effVal(c,d));
       ok=await atSubmitByPM(crId,evalName,fields);
     }
   } else {
     const existing=await atFindRecord(crId,evalName);
     const statut=existing?.fields?.pm_evaluateur?"Complet":"MR_fait";
     const fields={cr_id:crId,statut,mr_evaluateur:evalName,mr_timestamp:ts,mr_commentaire:d._cmt_mr||""};
-    for(const c of CRITERIA.filter(x=>x.role==="MR")) fields["mr_"+(c.key||c.name)]=toNum(d[c.name]);
+    for(const c of CRITERIA.filter(x=>x.role==="MR")) fields["mr_"+(c.key||c.name)]=toNum(effVal(c,d));
     ok=await atSubmit(crId,evalName,fields);
   }
 
@@ -925,6 +1039,8 @@ async function submitCR(){
 }
 
 function toNum(v){
+  if(v==="Oui") return 1;
+  if(v==="Non") return 0;
   if(v==null||v===""||v==="NA"||v==="N/A") return null;
   const n=Number(v); return isNaN(n)?null:n;
 }

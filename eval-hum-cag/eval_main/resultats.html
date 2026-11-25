@@ -153,9 +153,16 @@ const OVERLAP_MR = new Set(r(30,45));  // CR-31..45 (15 CRs) — les 2 MRs
 
 const BLOCS = [
   {name:"Réalisme dosimétrique", crit:[
-    {name:"Dose totale",                          role:"PM"},
-    {name:"Fractionnement",                       role:"PM"},
-    {name:"Technique",                            role:"PM"},
+    {name:"Présence dose / volume",   key:"Prescription - dose par volume",     role:"PM", type:"bin"},
+    {name:"Cohérence prescription",         key:"Prescription - cohérence",           role:"PM"},
+    {name:"Présence étalement",            key:"Étalement - mentionné",              role:"PM", type:"bin"},
+    {name:"Exactitude étalement",            key:"Étalement - cohérence",              role:"PM"},
+    {name:"Présence contraintes OAR",                key:"OAR - mentionnées",                  role:"PM", type:"bin"},
+    {name:"Cohérence contraintes OAR",                  key:"OAR - cohérence",                    role:"PM"},
+    {name:"Présence technique dosim.",     key:"Technique - technique dosimétrique", role:"PM", type:"bin"},
+    {name:"Présence nature faisceaux",     key:"Technique - nature faisceaux",       role:"PM", type:"bin"},
+    {name:"Présence énergie",              key:"Technique - énergie",                role:"PM", type:"bin"},
+    {name:"Cohérence infos techniques",            key:"Technique - cohérence",              role:"PM"},
   ]},
   {name:"Cohérence diagnostique & traitement", crit:[
     {name:"Volumes cibles",                       role:"MR"},
@@ -163,7 +170,6 @@ const BLOCS = [
     {name:"Hormonothérapie",                      role:"MR"},
   ]},
   {name:"Intégrité", crit:[
-    {name:"Hallucinations dosimétriques", key:"Hall. dosimétriques", role:"PM"},
     {name:"Hallucinations cliniques",     key:"Hall. cliniques",     role:"MR"},
     {name:"Contradictions internes",                                  role:"MR"},
   ]},
@@ -176,7 +182,7 @@ const BLOCS = [
     {name:"Suites thérapeutiques",                role:"MR"},
   ]},
   {name:"Rédaction", crit:[
-    {name:"Terminologie",                         role:"PM"},
+    {name:"Justesse des termes techniques",       role:"PM"},
     {name:"Organisation",                         role:"MR"},
     {name:"Clarté & Lisibilité", key:"Synthèse & Lisibilité", role:"MR"},
   ]},
@@ -250,7 +256,8 @@ function renderProgress(dataByEv){
   }
 }
 
-function scoreChip(val){
+function scoreChip(val,c){
+  if(c&&c.type==="bin"&&(val===0||val===1)) return `<span class="score ${val?"s4":"sna"}">${val?"Oui":"Non"}</span>`;
   if(val===null||val===undefined) return `<span class="smissing">·</span>`;
   if(val===0||val==="N/A") return `<span class="score sna">N/A</span>`;
   const cls=["","s1","s2","s3","s4"][val]||"";
@@ -282,7 +289,7 @@ function renderTable(ev, dataByEv){
     const iaaTag=(isIAApm||isIAAmr)
       ? ` <span style="font-size:.6rem;padding:1px 5px;border-radius:4px;background:#FDE68A;color:#92400E;margin-left:3px">IAA</span>` : "";
     tbody+=`<tr class="${iaaClass}"><td>${cr}${iaaTag}</td>`;
-    for(const c of visCrit) tbody+=`<td>${scoreChip(f?f[fieldKey(c)]:null)}</td>`;
+    for(const c of visCrit) tbody+=`<td>${scoreChip(f?f[fieldKey(c)]:null,c)}</td>`;
     tbody+=`<td class="cmt-cell">${f?.(f[cmtField]||"")}</td></tr>`;
   }
 
@@ -310,8 +317,8 @@ function switchTab(ev){
 }
 
 // ── IAA ────────────────────────────────────────────────────────
-function krippendorffAlpha(ratingsByCR){
-  const cats=[1,2,3,4];
+function krippendorffAlpha(ratingsByCR,cats=[1,2,3,4]){
+  // Alpha de Krippendorff — distance (k-l)² (= nominale pour une question Oui/Non codée 0/1)
   const units=ratingsByCR.filter(rs=>rs.length>=2);
   if(!units.length) return null;
   const o={};
@@ -376,13 +383,14 @@ function computeIAA(dataByEv){
       if(submitted.length<2) continue;
       const vals=submitted.map(ev=>{
         const v=dataByEv[ev][cr][key];
+        if(c.type==="bin") return (v===0||v===1)?v:"NA";
         return (v!=null&&v!==0&&v!=="N/A"&&Number.isInteger(v))?v:"NA";
       });
       byCR.push(vals);
       const scores=vals.filter(v=>v!=="NA");
       if(scores.length>=2) byCRscore.push(scores);
     }
-    return {crit:c, kappa:krippendorffAlpha(byCRscore), pct:pctAgree(byCR),
+    return {crit:c, kappa:krippendorffAlpha(byCRscore,c.type==="bin"?[0,1]:[1,2,3,4]), pct:pctAgree(byCR),
             n:byCR.length, nScore:byCRscore.length, overlapSize:overlap.size};
   });
 }
@@ -483,7 +491,7 @@ function renderIAA(dataByEv){
       <strong>IAA PM</strong> : calculé sur les 10 CRs communs aux 4 PMs (CR-33..42).
       <strong>IAA MR</strong> : calculé sur les 15 CRs communs aux 2 MRs (CR-31..45).
       Le % accord inclut les N/A comme réponse valide (N/A vs score = désaccord). L'Alpha est calculé sur les scores 1–4 uniquement.
-      CRs non encore soumis exclus. Seuils : α ≥ 0.80 fiable, α ≥ 0.67 acceptable.
+      CRs non encore soumis exclus. Seuils : α ≥ 0.80 fiable, α ≥ 0.67 acceptable. Questions Oui/Non : Alpha nominal (0/1) ; quand presque toutes les réponses sont identiques, l'Alpha peut être très bas malgré un % d'accord élevé (paradoxe du kappa) : se référer au % d'accord. Les questions de cohérence passées en N/A automatique (question parente = Non) sont exclues de l'Alpha.
     </div>`;
 }
 

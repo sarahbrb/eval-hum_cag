@@ -472,10 +472,6 @@ const CRITERIA = [
   {name:"Suites thérapeutiques",role:"MR",scale:"1-4",q:"Les suites thérapeutiques sont-elles mentionnées ?\n(rythme de surveillance, examens prévus, hormonothérapie adjuvante si indiquée)",
    hint:"Présence uniquement. L'hormonothérapie n'est attendue que si elle est indiquée (tumeur RH+).",
    notes:{"1":"Aucune suite thérapeutique mentionnée.","2":"Plusieurs éléments attendus manquent (une mention isolée ou vague).","3":"Un élément attendu manque.","4":"Tous les éléments attendus sont mentionnés."}},
-  {name:"Justesse des termes techniques",role:"PM",scale:"1-4",
-   q:"Les termes techniques employés dans le CR sont-ils justes et adaptés au contexte de la radiothérapie ?",
-   hint:"Ne pas évaluer ici : la syntaxe, les accords, le style (→ critère Clarté & Lisibilité), ni les unités et les valeurs (→ critères de cohérence du bloc 1). Exemples de termes non justes : anglicisme là où un équivalent français est d'usage (« CRT »), terme impropre (« dose moyenne » au lieu de « dose prescrite »), terme employé dans un mauvais sens, terme inventé.",
-   notes:{"1":"Termes techniques largement inexacts ou inadaptés : le CR ne paraît pas rédigé par un professionnel de radiothérapie.","2":"Plusieurs termes impropres ou mal employés, ou un terme qui crée un doute sur ce qui est décrit.","3":"Termes globalement justes. Quelques choix maladroits ou inhabituels qu'un professionnel n'aurait pas faits, sans aucun doute sur le sens.","4":"Tous les termes techniques sont justes et employés à bon escient : un professionnel aurait pu les écrire tels quels."}},
   {name:"Organisation",role:"MR",scale:"1-4",q:"Le CR suit-il une structure logique ? Les informations sont-elles regroupées et présentées dans un ordre cohérent ?\n(contexte / diagnostic → indication → traitement → tolérance → bilan de fin → suites)",
    hint:"Structure uniquement : le style et la fluidité relèvent du critère « Clarté & Lisibilité ».",
    notes:{"1":"Absence de structure : informations mélangées, impossible de suivre la prise en charge.","2":"Structure partiellement désordonnée : des informations dispersées ou hors de leur section, il faut chercher pour retrouver l'essentiel.","3":"Structure globalement logique : une information mal placée ou une section peu délimitée, sans gêne pour retrouver l'information.","4":"Structure claire et logique : chaque information est à sa place, l'ordre suit le déroulement de la prise en charge.","N/A":"-"}},
@@ -494,9 +490,9 @@ const BLOCS = [
   {name:"2. Cohérence diag. & traitement",   range:[10,12]},
   {name:"3. Intégrité",                      range:[13,14]},
   {name:"4. Complétude",                     range:[15,20]},
-  {name:"5. Rédaction",                      range:[21,23]},
-  {name:"6. Cohérence",                      range:[24,24]},
-  {name:"7. Impression globale",             range:[25,25]},
+  {name:"5. Rédaction",                      range:[21,22]},
+  {name:"6. Cohérence",                      range:[23,23]},
+  {name:"7. Impression globale",             range:[24,24]},
 ];
 
 const SCALE_LABELS = {"1":"Pas du tout","2":"Partiellement","3":"Globalement","4":"Complètement","N/A":"N/A","Oui":"Oui","Non":"Non"};
